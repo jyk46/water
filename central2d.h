@@ -132,11 +132,11 @@ public:
     int ysize() const { return ny; }
     
     // Read / write elements of simulation state
-    vec&       operator()(int i, int j) {
+    inline vec&       operator()(int i, int j) {
         return u_[offset(i+nghost,j+nghost)];
     }
     
-    const vec& operator()(int i, int j) const {
+    inline const vec& operator()(int i, int j) const {
         return u_[offset(i+nghost,j+nghost)];
     }
     
@@ -151,7 +151,11 @@ private:
     // sizeof(vec)*4 = 4*sizeof(float)*4 = 4*4*4 = 64
     // desired; 64 is the necessary alignment for AVX512
     #define BYTE_ALIGN 64
-    typedef __declspec(align(BYTE_ALIGN)) std::vector<vec, aligned_allocator<vec, BYTE_ALIGN>> aligned_vector;
+    #ifdef __INTEL_COMPILER
+        typedef __declspec(align(BYTE_ALIGN)) std::vector<vec, aligned_allocator<vec, BYTE_ALIGN>> aligned_vector;
+    #else // GCC
+        typedef __attribute__ ((aligned(BYTE_ALIGN))) std::vector<vec, aligned_allocator<vec, BYTE_ALIGN>> aligned_vector;
+    #endif
     /*std::vector<vec>*/aligned_vector u_;            // Solution values
     /*std::vector<vec>*/aligned_vector f_;            // Fluxes in x
     /*std::vector<vec>*/aligned_vector g_;            // Fluxes in y
