@@ -360,19 +360,70 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
             // for (int m = 0; m < v(ix,iy).size(); ++m) {
             vec &v_ix_iy = v(ix, iy);
+
+            /* Nomenclature:
+             *     u_x0_y0 <- u(ix  , iy  )
+             *     u_x1_y0 <- u(ix+1, iy  )
+             *     u_x0_y1 <- u(ix  , iy+1)
+             *     u_x1_y1 <- u(ix+1, iy+1)
+             */
+            vec &u_ix_iy = u(ix, iy);
+
+            // grab u
+            vec &u_x0_y0 = u(ix  , iy  );
+            vec &u_x1_y0 = u(ix+1, iy  );
+            vec &u_x0_y1 = u(ix  , iy+1);
+            vec &u_x1_y1 = u(ix+1, iy+1);
+
+            // grab ux
+            vec &ux_x0_y0 = ux(ix  , iy  );
+            vec &ux_x1_y0 = ux(ix+1, iy  );
+            vec &ux_x0_y1 = ux(ix  , iy+1);
+            vec &ux_x1_y1 = ux(ix+1, iy+1);
+
+            // grab uy
+            vec &uy_x0_y0 = uy(ix  , iy  );
+            vec &uy_x1_y0 = uy(ix+1, iy  );
+            vec &uy_x0_y1 = uy(ix  , iy+1);
+            vec &uy_x1_y1 = uy(ix+1, iy+1);
+
+            // grab f
+            vec &f_x0_y0 = f(ix  , iy  );
+            vec &f_x1_y0 = f(ix+1, iy  );
+            vec &f_x0_y1 = f(ix  , iy+1);
+            vec &f_x1_y1 = f(ix+1, iy+1);
+
+            // grab g
+            vec &g_x0_y0 = g(ix  , iy  );
+            vec &g_x1_y0 = g(ix+1, iy  );
+            vec &g_x0_y1 = g(ix  , iy+1);
+            vec &g_x1_y1 = g(ix+1, iy+1);
+
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
+                // v_ix_iy[m] =
+                //     0.2500 * ( u(ix,  iy)[m] + u(ix+1,iy  )[m] +
+                //                u(ix,iy+1)[m] + u(ix+1,iy+1)[m] ) -
+                //     0.0625 * ( ux(ix+1,iy  )[m] - ux(ix,iy  )[m] +
+                //                ux(ix+1,iy+1)[m] - ux(ix,iy+1)[m] +
+                //                uy(ix,  iy+1)[m] - uy(ix,  iy)[m] +
+                //                uy(ix+1,iy+1)[m] - uy(ix+1,iy)[m] ) -
+                //     dtcdx2 * ( f(ix+1,iy  )[m] - f(ix,iy  )[m] +
+                //                f(ix+1,iy+1)[m] - f(ix,iy+1)[m] ) -
+                //     dtcdy2 * ( g(ix,  iy+1)[m] - g(ix,  iy)[m] +
+                //                g(ix+1,iy+1)[m] - g(ix+1,iy)[m] );
+
                 v_ix_iy[m] =
-                    0.2500 * ( u(ix,  iy)[m] + u(ix+1,iy  )[m] +
-                               u(ix,iy+1)[m] + u(ix+1,iy+1)[m] ) -
-                    0.0625 * ( ux(ix+1,iy  )[m] - ux(ix,iy  )[m] +
-                               ux(ix+1,iy+1)[m] - ux(ix,iy+1)[m] +
-                               uy(ix,  iy+1)[m] - uy(ix,  iy)[m] +
-                               uy(ix+1,iy+1)[m] - uy(ix+1,iy)[m] ) -
-                    dtcdx2 * ( f(ix+1,iy  )[m] - f(ix,iy  )[m] +
-                               f(ix+1,iy+1)[m] - f(ix,iy+1)[m] ) -
-                    dtcdy2 * ( g(ix,  iy+1)[m] - g(ix,  iy)[m] +
-                               g(ix+1,iy+1)[m] - g(ix+1,iy)[m] );
+                    0.2500 * ( u_x0_y0[m] + u_x1_y0[m] +
+                               u_x0_y1[m] + u_x1_y1[m] ) -
+                    0.0625 * ( ux_x1_y0[m] - ux_x0_y0[m] +
+                               ux_x1_y1[m] - ux_x0_y1[m] +
+                               uy_x0_y1[m] - uy_x0_y0[m] +
+                               uy_x1_y1[m] - uy_x1_y0[m] ) -
+                    dtcdx2 * ( f_x1_y0[m] - f_x0_y0[m] +
+                               f_x1_y1[m] - f_x0_y1[m] ) -
+                    dtcdy2 * ( g_x0_y1[m] - g_x0_y0[m] +
+                               g_x1_y1[m] - g_x1_y0[m] );                    
             }
         }
     }
