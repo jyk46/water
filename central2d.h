@@ -399,8 +399,6 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             vec &g_x0_y1 = g(ix  , iy+1);
             vec &g_x1_y1 = g(ix+1, iy+1);
 
-            std::cout << "GAH: " << sizeof(vec) << std::endl;
-
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
                 // v_ix_iy[m] =

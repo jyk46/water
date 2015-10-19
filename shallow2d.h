@@ -63,7 +63,12 @@ struct Shallow2D {
     // Type parameters for solver
     #define VEC_DIM 4
     typedef float real;
-    typedef std::array<real, VEC_DIM> vec;
+    #ifdef __INTEL_COMPILER
+        typedef __declspec(align(16)) std::array<real, VEC_DIM> vec;
+    #else // GCC
+        typedef __attribute__ ((aligned(16))) std::array<real, VEC_DIM> vec;
+    #endif
+    // typedef std::array<real, VEC_DIM> vec;
 
     // allow loop unrolling over `vec`
     static constexpr int vec_size = VEC_DIM;
