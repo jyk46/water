@@ -398,7 +398,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             real *g_x0_y1 = g(ix  , iy+1).data(); __assume_aligned(g_x0_y1, Physics::VEC_ALIGN);
             real *g_x1_y1 = g(ix+1, iy+1).data(); __assume_aligned(g_x1_y1, Physics::VEC_ALIGN);
 
-            #pragma unroll
+            #pragma simd
             for(int m = 0; m < Physics::vec_size; ++m) {
                 // v_ix_iy[m] =
                 //     0.2500 * ( u(ix,  iy)[m] + u(ix+1,iy  )[m] +
