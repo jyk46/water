@@ -163,28 +163,28 @@ private:
 
     // Array accessor functions
 
-    int offset(int ix, int iy) const { return iy*nx_all+ix; }
+    inline int offset(int ix, int iy) const { return iy*nx_all+ix; }
 
-    vec& u(int ix, int iy)    { return u_[offset(ix,iy)]; }
-    vec& v(int ix, int iy)    { return v_[offset(ix,iy)]; }
-    vec& f(int ix, int iy)    { return f_[offset(ix,iy)]; }
-    vec& g(int ix, int iy)    { return g_[offset(ix,iy)]; }
+    inline vec& u(int ix, int iy)    { return u_[offset(ix,iy)]; }
+    inline vec& v(int ix, int iy)    { return v_[offset(ix,iy)]; }
+    inline vec& f(int ix, int iy)    { return f_[offset(ix,iy)]; }
+    inline vec& g(int ix, int iy)    { return g_[offset(ix,iy)]; }
 
-    vec& ux(int ix, int iy)   { return ux_[offset(ix,iy)]; }
-    vec& uy(int ix, int iy)   { return uy_[offset(ix,iy)]; }
-    vec& fx(int ix, int iy)   { return fx_[offset(ix,iy)]; }
-    vec& gy(int ix, int iy)   { return gy_[offset(ix,iy)]; }
+    inline vec& ux(int ix, int iy)   { return ux_[offset(ix,iy)]; }
+    inline vec& uy(int ix, int iy)   { return uy_[offset(ix,iy)]; }
+    inline vec& fx(int ix, int iy)   { return fx_[offset(ix,iy)]; }
+    inline vec& gy(int ix, int iy)   { return gy_[offset(ix,iy)]; }
 
     // Wrapped accessor (periodic BC)
-    int ioffset(int ix, int iy) {
+    inline int ioffset(int ix, int iy) {
         return offset( (ix+nx-nghost) % nx + nghost,
                        (iy+ny-nghost) % ny + nghost );
     }
 
-    vec& uwrap(int ix, int iy)  { return u_[ioffset(ix,iy)]; }
+    inline vec& uwrap(int ix, int iy)  { return u_[ioffset(ix,iy)]; }
 
     // Apply limiter to all components in a vector
-    static void limdiff(vec& du, const vec& um, const vec& u0, const vec& up) {
+    inline static void limdiff(vec& du, const vec& um, const vec& u0, const vec& up) {
         for (int m = 0; m < du.size(); ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
