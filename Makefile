@@ -88,6 +88,7 @@ shallow.md: shallow2d.h minmod.h central2d.h meshio.h driver.cc
 
 .PHONY: clean
 clean:
+	rm -f aligned_allocator.o
 	rm -f shallow
 	rm -f shallow-omp
 	rm -f dam_break.* wave.*
