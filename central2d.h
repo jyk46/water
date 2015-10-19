@@ -344,7 +344,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy) {
         for (int ix = 1; ix < nx_all-1; ++ix) {
-            vec &uh = u(ix,iy);
+            vec uh = u(ix,iy);
             // for (int m = 0; m < uh.size(); ++m) {
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
