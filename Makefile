@@ -18,7 +18,11 @@ include Makefile.in.$(PLATFORM)
 .PHONY: all
 all: shallow
 
+<<<<<<< HEAD
 shallow: aligned_allocator.cpp driver.cc central2d.h shallow2d.h minmod.h meshio.h
+=======
+shallow: driver.cc central2d.h shallow2d.h minmod.h meshio.h
+>>>>>>> 441b13b2d07c9e5b98d3d459c6a186dacffe7401
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 shallow-serial: driver.cc central2d.h shallow2d.h minmod.h meshio.h
