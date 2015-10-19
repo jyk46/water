@@ -6,6 +6,8 @@
 #include <cassert>
 #include <vector>
 
+#include "aligned_allocator.h"
+
 //ldoc on
 /**
  * # Jiang-Tadmor central difference scheme
@@ -146,14 +148,18 @@ private:
     const real dx, dy;         // Cell size in x/y
     const real cfl;            // Allowed CFL number
 
-    std::vector<vec> u_;            // Solution values
-    std::vector<vec> f_;            // Fluxes in x
-    std::vector<vec> g_;            // Fluxes in y
-    std::vector<vec> ux_;           // x differences of u
-    std::vector<vec> uy_;           // y differences of u
-    std::vector<vec> fx_;           // x differences of f
-    std::vector<vec> gy_;           // y differences of g
-    std::vector<vec> v_;            // Solution values at next step
+    // sizeof(vec)*4 = 4*sizeof(float)*4 = 4*4*4 = 64
+    // desired; 64 is the necessary alignment for AVX512
+    #define BYTE_ALIGN (sizeof(vec))
+    typedef __declspec(align(BYTE_ALIGN)) std::vector<vec, aligned_allocator<vec, BYTE_ALIGN>> aligned_vector;
+    /*std::vector<vec>*/aligned_vector u_;            // Solution values
+    /*std::vector<vec>*/aligned_vector f_;            // Fluxes in x
+    /*std::vector<vec>*/aligned_vector g_;            // Fluxes in y
+    /*std::vector<vec>*/aligned_vector ux_;           // x differences of u
+    /*std::vector<vec>*/aligned_vector uy_;           // y differences of u
+    /*std::vector<vec>*/aligned_vector fx_;           // x differences of f
+    /*std::vector<vec>*/aligned_vector gy_;           // y differences of g
+    /*std::vector<vec>*/aligned_vector v_;            // Solution values at next step
 
     // Array accessor functions
 
