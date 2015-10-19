@@ -359,9 +359,10 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy) {
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
             // for (int m = 0; m < v(ix,iy).size(); ++m) {
+            vec &v_ix_iy = v(ix, iy);
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
-                v(ix,iy)[m] =
+                v_ix_iy[m] =
                     0.2500 * ( u(ix,  iy)[m] + u(ix+1,iy  )[m] +
                                u(ix,iy+1)[m] + u(ix+1,iy+1)[m] ) -
                     0.0625 * ( ux(ix+1,iy  )[m] - ux(ix,iy  )[m] +
