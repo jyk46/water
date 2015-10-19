@@ -279,7 +279,8 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
     for (int iy = 0; iy < ny_all; ++iy)
         for (int ix = 0; ix < nx_all; ++ix) {
             real cell_cx, cell_cy;
-            Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
+            // Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
+            Physics::flux(f(ix,iy).data(), g(ix,iy).data(), u(ix,iy).data());
             Physics::wave_speed(cell_cx, cell_cy, u(ix,iy));
             cx = max(cx, cell_cx);
             cy = max(cy, cell_cy);
@@ -344,14 +345,20 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy) {
         for (int ix = 1; ix < nx_all-1; ++ix) {
-            vec uh = u(ix,iy);
+            vec uh = u(ix,iy);// IMPORTANT: must not modify u(ix,iy)!!!
+            real *uh_cpy = uh.data(); __assume_aligned(uh_cpy, Physics::VEC_ALIGN);
+            real *fh = fx(ix, iy).data(); __assume_aligned(fh, Physics::VEC_ALIGN);
+            real *gh = gy(ix, iy).data(); __assume_aligned(gh, Physics::VEC_ALIGN);
             // for (int m = 0; m < uh.size(); ++m) {
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
-                uh[m] -= dtcdx2 * fx(ix,iy)[m];
-                uh[m] -= dtcdy2 * gy(ix,iy)[m];
+                // uh_cpy[m] -= dtcdx2 * fx(ix,iy)[m];
+                // uh_cpy[m] -= dtcdy2 * gy(ix,iy)[m];
+                uh_cpy[m] -= dtcdx2 * fh[m];
+                uh_cpy[m] -= dtcdy2 * gh[m];
             }
-            Physics::flux(f(ix,iy), g(ix,iy), uh);
+            // Physics::flux(f(ix,iy), g(ix,iy), uh);
+            Physics::flux(f(ix,iy).data(), g(ix,iy).data(), uh_cpy);
         }
     }
 

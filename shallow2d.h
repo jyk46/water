@@ -78,16 +78,23 @@ struct Shallow2D {
     static constexpr real g = 9.8;
 
     // Compute shallow water fluxes F(U), G(U)
-    static void flux(vec& FU, vec& GU, const vec& U) {
-        real h = U[0], hu = U[1], hv = U[2];
+    // static void flux(vec& FU, vec& GU, const vec& U) {
+    static void flux(real *FU, real *GU, const real *U) {
+        __assume_aligned(FU, VEC_ALIGN);
+        __assume_aligned(GU, VEC_ALIGN);
+        __assume_aligned(U,  VEC_ALIGN);
+
+        real h = U[0], hu = U[1], hv = U[2], ignore = U[3];
 
         FU[0] = hu;
         FU[1] = hu*hu/h + (0.5*g)*h*h;
         FU[2] = hu*hv/h;
+        FU[3] = ignore;
 
         GU[0] = hv;
         GU[1] = hu*hv/h;
         GU[2] = hv*hv/h + (0.5*g)*h*h;
+        GU[3] = ignore;
     }
 
     // Compute shallow water wave speed
