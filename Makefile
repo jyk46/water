@@ -16,10 +16,10 @@ include Makefile.in.$(PLATFORM)
 # ===
 # Main driver and sample run
 
-shallow: driver.cc central2d.h shallow2d.h minmod.h meshio.h
+shallow: aligned_allocator.hpp driver.cc central2d.h shallow2d.h minmod.h meshio.h
 	$(CXX) $(CXXFLAGS) -D_SERIAL -o $@ $<
 
-shallow-pnode: driver.cc central2d_pnode.h shallow2d.h minmod.h meshio.h
+shallow-pnode: aligned_allocator.hpp driver.cc central2d_pnode.h shallow2d.h minmod.h meshio.h
 	$(CXX) $(CXXFLAGS) -D_PARALLEL_NODE -o $@ $<
 
 .PHONY: run big
