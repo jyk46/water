@@ -347,11 +347,11 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
             vec uh = u(ix,iy);// IMPORTANT: must not modify u(ix,iy)!!!
-            real *uh_cpy = uh.data(); __assume_aligned(uh_cpy, Physics::VEC_ALIGN);
+            real *uh_cpy = uh.data();     __assume_aligned(uh_cpy, Physics::VEC_ALIGN);
             real *fh = fx(ix, iy).data(); __assume_aligned(fh, Physics::VEC_ALIGN);
             real *gh = gy(ix, iy).data(); __assume_aligned(gh, Physics::VEC_ALIGN);
             // for (int m = 0; m < uh.size(); ++m) {
-            // #pragma unroll
+            #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
                 // uh_cpy[m] -= dtcdx2 * fx(ix,iy)[m];
                 // uh_cpy[m] -= dtcdy2 * gy(ix,iy)[m];
