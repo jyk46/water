@@ -359,7 +359,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy) {
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
             // for (int m = 0; m < v(ix,iy).size(); ++m) {
-            vec &v_ix_iy = v(ix, iy); __assume_aligned(v_ix_iy.data(), Physics::VEC_ALIGN);
+            real *v_ix_iy = v(ix, iy).data(); __assume_aligned(v_ix_iy, Physics::VEC_ALIGN);
 
             /* Nomenclature:
              *     u_x0_y0 <- u(ix  , iy  )
@@ -369,34 +369,34 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
              */
 
             // grab u
-            vec &u_x1_y0 = u(ix+1, iy  ); __assume_aligned(u_x1_y0.data(), Physics::VEC_ALIGN);
-            vec &u_x0_y0 = u(ix  , iy  ); __assume_aligned(u_x0_y0.data(), Physics::VEC_ALIGN);
-            vec &u_x0_y1 = u(ix  , iy+1); __assume_aligned(u_x0_y1.data(), Physics::VEC_ALIGN);
-            vec &u_x1_y1 = u(ix+1, iy+1); __assume_aligned(u_x1_y1.data(), Physics::VEC_ALIGN);
+            real *u_x1_y0 = u(ix+1, iy  ).data(); __assume_aligned(u_x1_y0, Physics::VEC_ALIGN);
+            real *u_x0_y0 = u(ix  , iy  ).data(); __assume_aligned(u_x0_y0, Physics::VEC_ALIGN);
+            real *u_x0_y1 = u(ix  , iy+1).data(); __assume_aligned(u_x0_y1, Physics::VEC_ALIGN);
+            real *u_x1_y1 = u(ix+1, iy+1).data(); __assume_aligned(u_x1_y1, Physics::VEC_ALIGN);
 
             // grab ux
-            vec &ux_x0_y0 = ux(ix  , iy  ); __assume_aligned(ux_x0_y0.data(), Physics::VEC_ALIGN);
-            vec &ux_x1_y0 = ux(ix+1, iy  ); __assume_aligned(ux_x1_y0.data(), Physics::VEC_ALIGN);
-            vec &ux_x0_y1 = ux(ix  , iy+1); __assume_aligned(ux_x0_y1.data(), Physics::VEC_ALIGN);
-            vec &ux_x1_y1 = ux(ix+1, iy+1); __assume_aligned(ux_x1_y1.data(), Physics::VEC_ALIGN);
+            real *ux_x0_y0 = ux(ix  , iy  ).data(); __assume_aligned(ux_x0_y0, Physics::VEC_ALIGN);
+            real *ux_x1_y0 = ux(ix+1, iy  ).data(); __assume_aligned(ux_x1_y0, Physics::VEC_ALIGN);
+            real *ux_x0_y1 = ux(ix  , iy+1).data(); __assume_aligned(ux_x0_y1, Physics::VEC_ALIGN);
+            real *ux_x1_y1 = ux(ix+1, iy+1).data(); __assume_aligned(ux_x1_y1, Physics::VEC_ALIGN);
 
             // grab uy
-            vec &uy_x0_y0 = uy(ix  , iy  ); __assume_aligned(uy_x0_y0.data(), Physics::VEC_ALIGN);
-            vec &uy_x1_y0 = uy(ix+1, iy  ); __assume_aligned(uy_x1_y0.data(), Physics::VEC_ALIGN);
-            vec &uy_x0_y1 = uy(ix  , iy+1); __assume_aligned(uy_x0_y1.data(), Physics::VEC_ALIGN);
-            vec &uy_x1_y1 = uy(ix+1, iy+1); __assume_aligned(uy_x1_y1.data(), Physics::VEC_ALIGN);
+            real *uy_x0_y0 = uy(ix  , iy  ).data(); __assume_aligned(uy_x0_y0, Physics::VEC_ALIGN);
+            real *uy_x1_y0 = uy(ix+1, iy  ).data(); __assume_aligned(uy_x1_y0, Physics::VEC_ALIGN);
+            real *uy_x0_y1 = uy(ix  , iy+1).data(); __assume_aligned(uy_x0_y1, Physics::VEC_ALIGN);
+            real *uy_x1_y1 = uy(ix+1, iy+1).data(); __assume_aligned(uy_x1_y1, Physics::VEC_ALIGN);
 
             // grab f
-            vec &f_x0_y0 = f(ix  , iy  ); __assume_aligned(f_x0_y0.data(), Physics::VEC_ALIGN);
-            vec &f_x1_y0 = f(ix+1, iy  ); __assume_aligned(f_x1_y0.data(), Physics::VEC_ALIGN);
-            vec &f_x0_y1 = f(ix  , iy+1); __assume_aligned(f_x0_y1.data(), Physics::VEC_ALIGN);
-            vec &f_x1_y1 = f(ix+1, iy+1); __assume_aligned(f_x1_y1.data(), Physics::VEC_ALIGN);
+            real *f_x0_y0 = f(ix  , iy  ).data(); __assume_aligned(f_x0_y0, Physics::VEC_ALIGN);
+            real *f_x1_y0 = f(ix+1, iy  ).data(); __assume_aligned(f_x1_y0, Physics::VEC_ALIGN);
+            real *f_x0_y1 = f(ix  , iy+1).data(); __assume_aligned(f_x0_y1, Physics::VEC_ALIGN);
+            real *f_x1_y1 = f(ix+1, iy+1).data(); __assume_aligned(f_x1_y1, Physics::VEC_ALIGN);
 
             // grab g
-            vec &g_x0_y0 = g(ix  , iy  ); __assume_aligned(g_x0_y0.data(), Physics::VEC_ALIGN);
-            vec &g_x1_y0 = g(ix+1, iy  ); __assume_aligned(g_x1_y0.data(), Physics::VEC_ALIGN);
-            vec &g_x0_y1 = g(ix  , iy+1); __assume_aligned(g_x0_y1.data(), Physics::VEC_ALIGN);
-            vec &g_x1_y1 = g(ix+1, iy+1); __assume_aligned(g_x1_y1.data(), Physics::VEC_ALIGN);
+            real *g_x0_y0 = g(ix  , iy  ).data(); __assume_aligned(g_x0_y0, Physics::VEC_ALIGN);
+            real *g_x1_y0 = g(ix+1, iy  ).data(); __assume_aligned(g_x1_y0, Physics::VEC_ALIGN);
+            real *g_x0_y1 = g(ix  , iy+1).data(); __assume_aligned(g_x0_y1, Physics::VEC_ALIGN);
+            real *g_x1_y1 = g(ix+1, iy+1).data(); __assume_aligned(g_x1_y1, Physics::VEC_ALIGN);
 
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
