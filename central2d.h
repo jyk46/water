@@ -339,23 +339,20 @@ void Central2D<Physics, Limiter>::limited_derivs()
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 {
-    real dtcdx2 = 0.5 * dt / dx;
-    real dtcdy2 = 0.5 * dt / dy;
+    real dtcdx2 = 0.5f * dt / dx;
+    real dtcdy2 = 0.5f * dt / dy;
 
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy) {
-        // #pragma simd
+        #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
             vec uh = u(ix,iy);// IMPORTANT: must not modify u(ix,iy)!!!
             real *uh_cpy = uh.data();     __assume_aligned(uh_cpy, Physics::VEC_ALIGN);
             real *fh = fx(ix, iy).data(); __assume_aligned(fh, Physics::VEC_ALIGN);
             real *gh = gy(ix, iy).data(); __assume_aligned(gh, Physics::VEC_ALIGN);
-            // for (int m = 0; m < uh.size(); ++m) {
-            // #pragma unroll
-            #pragma simd
+
+            #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
-                // uh_cpy[m] -= dtcdx2 * fx(ix,iy)[m];
-                // uh_cpy[m] -= dtcdy2 * gy(ix,iy)[m];
                 uh_cpy[m] -= dtcdx2 * fh[m];
                 uh_cpy[m] -= dtcdy2 * gh[m];
             }
@@ -409,29 +406,25 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             #pragma simd
             for(int m = 0; m < Physics::vec_size; ++m) {
                 v_ix_iy[m] =
-                    0.2500 * ( u_x0_y0[m] + u_x1_y0[m] +
-                               u_x0_y1[m] + u_x1_y1[m] ) -
-                    0.0625 * ( ux_x1_y0[m] - ux_x0_y0[m] +
-                               ux_x1_y1[m] - ux_x0_y1[m] +
-                               uy_x0_y1[m] - uy_x0_y0[m] +
-                               uy_x1_y1[m] - uy_x1_y0[m] ) -
-                    dtcdx2 * ( f_x1_y0[m] - f_x0_y0[m] +
-                               f_x1_y1[m] - f_x0_y1[m] ) -
-                    dtcdy2 * ( g_x0_y1[m] - g_x0_y0[m] +
-                               g_x1_y1[m] - g_x1_y0[m] );                    
+                    0.2500f * ( u_x0_y0[m]  + u_x1_y0[m]    +
+                                u_x0_y1[m]  + u_x1_y1[m]  ) -
+                    0.0625f * ( ux_x1_y0[m] - ux_x0_y0[m]   +
+                                ux_x1_y1[m] - ux_x0_y1[m]   +
+                                uy_x0_y1[m] - uy_x0_y0[m]   +
+                                uy_x1_y1[m] - uy_x1_y0[m] ) -
+                    dtcdx2  * ( f_x1_y0[m]  - f_x0_y0[m]    +
+                                f_x1_y1[m]  - f_x0_y1[m]  ) -
+                    dtcdy2  * ( g_x0_y1[m]  - g_x0_y0[m]    +
+                                g_x1_y1[m]  - g_x1_y0[m]  );                    
             }
         }
     }
 
     // Copy from v storage back to main grid
+    // Due to a data dependence, this loop cannot be vectorized
     for (int j = nghost; j < ny+nghost; ++j){
         for (int i = nghost; i < nx+nghost; ++i){
-            // u(i,j) = v(i-io,j-io);
-            real *u_ij    = u(i, j).data();       __assume_aligned(u_ij,    Physics::VEC_ALIGN);
-            real *v_ij_io = v(i-io, j-io).data(); __assume_aligned(v_ij_io, Physics::VEC_ALIGN);
-            #pragma unroll
-            for(int m = 0; m < Physics::vec_size; ++m)
-                u_ij[m] = v_ij_io[m];
+            u(i,j) = v(i-io,j-io);
         }
     }
 }
@@ -455,7 +448,7 @@ template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::run(real tfinal)
 {
     bool done = false;
-    real t = 0;
+    real t = 0.0f;
     while (!done) {
         real dt;
         for (int io = 0; io < 2; ++io) {
@@ -465,8 +458,8 @@ void Central2D<Physics, Limiter>::run(real tfinal)
             limited_derivs();
             if (io == 0) {
                 dt = cfl / std::max(cx/dx, cy/dy);
-                if (t + 2*dt >= tfinal) {
-                    dt = (tfinal-t)/2;
+                if (t + 2.0f*dt >= tfinal) {
+                    dt = (tfinal-t) * 0.5f;
                     done = true;
                 }
             }
@@ -492,22 +485,36 @@ template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::solution_check()
 {
     using namespace std;
-    real h_sum = 0, hu_sum = 0, hv_sum = 0;
+    real h_sum  = 0.0f,
+         hu_sum = 0.0f,
+         hv_sum = 0.0f;
+
     real hmin = u(nghost,nghost)[0];
     real hmax = hmin;
+
+    #pragma simd
     for (int j = nghost; j < ny+nghost; ++j)
         for (int i = nghost; i < nx+nghost; ++i) {
-            vec& uij = u(i,j);
-            real h = uij[0];
-            h_sum += h;
-            hu_sum += uij[1];
-            hv_sum += uij[2];
+            // vec& uij = u(i,j);
+            // real h = uij[0];
+            // h_sum += h;
+            // hu_sum += uij[1];
+            // hv_sum += uij[2];
+            // hmax = max(h, hmax);
+            // hmin = min(h, hmin);
+
+            real *u_ij = u(i,j).data(); __assume_aligned(u_ij, Physics::VEC_ALIGN);
+            real h = u_ij[0];
+            hu_sum = u_ij[1];
+            hv_sum = u_ij[2];
+
             hmax = max(h, hmax);
             hmin = min(h, hmin);
+
             assert( h > 0) ;
         }
     real cell_area = dx*dy;
-    h_sum *= cell_area;
+    h_sum  *= cell_area;
     hu_sum *= cell_area;
     hv_sum *= cell_area;
     printf("-\n  Volume: %g\n  Momentum: (%g, %g)\n  Range: [%g, %g]\n",
