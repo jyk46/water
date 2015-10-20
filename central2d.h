@@ -447,24 +447,30 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::run(real tfinal)
 {
-    bool done = false;
-    real t = 0.0f;
-    while (!done) {
-        real dt;
-        for (int io = 0; io < 2; ++io) {
-            real cx, cy;
-            apply_periodic();
-            compute_fg_speeds(cx, cy);
-            limited_derivs();
-            if (io == 0) {
-                dt = cfl / std::max(cx/dx, cy/dy);
-                if (t + 2.0f*dt >= tfinal) {
-                    dt = (tfinal-t) * 0.5f;
-                    done = true;
+    #pragma offload target(mic)
+    {
+        #pragma omp parallel
+        {
+            bool done = false;
+            real t = 0.0f;
+            while (!done) {
+                real dt;
+                for (int io = 0; io < 2; ++io) {
+                    real cx, cy;
+                    apply_periodic();
+                    compute_fg_speeds(cx, cy);
+                    limited_derivs();
+                    if (io == 0) {
+                        dt = cfl / std::max(cx/dx, cy/dy);
+                        if (t + 2.0f*dt >= tfinal) {
+                            dt = (tfinal-t) * 0.5f;
+                            done = true;
+                        }
+                    }
+                    compute_step(io, dt);
+                    t += dt;
                 }
             }
-            compute_step(io, dt);
-            t += dt;
         }
     }
 }
@@ -493,24 +499,14 @@ void Central2D<Physics, Limiter>::solution_check()
     real hmax = hmin;
 
     for (int j = nghost; j < ny+nghost; ++j)
-        #pragma simd
         for (int i = nghost; i < nx+nghost; ++i) {
-            // vec& uij = u(i,j);
-            // real h = uij[0];
-            // h_sum += h;
-            // hu_sum += uij[1];
-            // hv_sum += uij[2];
-            // hmax = max(h, hmax);
-            // hmin = min(h, hmin);
-
-            real *u_ij = u(i,j).data(); __assume_aligned(u_ij, Physics::VEC_ALIGN);
-            real h = u_ij[0];
-            hu_sum = u_ij[1];
-            hv_sum = u_ij[2];
-
-            hmax = max(h, hmax);
-            hmin = min(h, hmin);
-
+            vec& uij = u(i,j);
+            real h   = uij[0];
+            h_sum   += h;
+            hu_sum  += uij[1];
+            hv_sum  += uij[2];
+            hmax     = max(h, hmax);
+            hmin     = min(h, hmin);
             assert( h > 0) ;
         }
     real cell_area = dx*dy;
