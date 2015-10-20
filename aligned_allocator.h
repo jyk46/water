@@ -23,7 +23,6 @@
  * Modified from the Mallocator from Stephan T. Lavavej.
  * <http://blogs.msdn.com/b/vcblog/archive/2008/08/28/the-mallocator.aspx>
  */
- __declspec(target(mic))
 template <typename T, std::size_t Alignment>
 class aligned_allocator
 {

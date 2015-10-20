@@ -56,7 +56,6 @@
  * experiment with others if you know what you're doing and think it
  * will improve performance or accuracy.
  */
-__declspec(target(mic))
 template <class real>
 struct MinMod {
     static constexpr real theta = 2.0;

@@ -35,7 +35,6 @@
  * a `Central2D` solver for the `Shallow2D` physics with a `MinMod`
  * limiter:
  */
-__declspec(target(mic))
 typedef Central2D< Shallow2D, MinMod<Shallow2D::real> > Sim;
 
 /**

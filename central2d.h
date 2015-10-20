@@ -196,9 +196,16 @@ private:
     }
 
     // Stages of the main algorithm
+    __declspec(target(mic))
     void apply_periodic();
+
+    __declspec(target(mic))
     void compute_fg_speeds(real& cx, real& cy);
+    
+    __declspec(target(mic))
     void limited_derivs();
+    
+    __declspec(target(mic))
     void compute_step(int io, real dt);
 
 };
@@ -214,7 +221,7 @@ private:
  * cell $(i,j)$ is the subdomain 
  * $[i \Delta x, (i+1) \Delta x] \times [j \Delta y, (j+1) \Delta y]$.
  */
-
+__declspec(target(mic))
 template <class Physics, class Limiter>
 template <typename F>
 void Central2D<Physics, Limiter>::init(F f)
@@ -240,7 +247,7 @@ void Central2D<Physics, Limiter>::init(F f)
  * to the corresponding canonical values `(ix+p*nx,iy+q*ny)` for some
  * integers `p` and `q`.
  */
-
+__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::apply_periodic()
 {
@@ -269,7 +276,7 @@ void Central2D<Physics, Limiter>::apply_periodic()
  * we can choose a time step that respects the specified upper
  * bound on the CFL number).
  */
-
+__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
 {
@@ -296,7 +303,7 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
  * derivatives of the fluxes and the solution values at each cell.
  * In order to maintain stability, we apply a limiter here.
  */
-
+__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::limited_derivs()
 {
@@ -335,7 +342,7 @@ void Central2D<Physics, Limiter>::limited_derivs()
  * mesh cell in each direction, essentially resetting to the primary
  * indexing scheme.
  */
-
+__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 {
@@ -443,7 +450,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
  * We always take an even number of steps so that the solution
  * at the end lives on the main grid instead of the staggered grid. 
  */
-
+__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::run(real tfinal)
 {
@@ -489,7 +496,7 @@ void Central2D<Physics, Limiter>::run(real tfinal)
  * information about these conserved quantities (and about the range
  * of water heights).
  */
-
+__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::solution_check()
 {
