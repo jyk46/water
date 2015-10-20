@@ -451,6 +451,9 @@ void Central2D<Physics, Limiter>::run(real tfinal)
     {
         #pragma omp parallel
         {
+            int tid = omp_get_thread_num();
+            std::string meh = " ~ T[" + std::to_string(tid) + "] ~ ";
+            std::cout << meh << std::endl;
             bool done = false;
             real t = 0.0f;
             while (!done) {
