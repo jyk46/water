@@ -17,7 +17,7 @@
  * -- we need to produce something that is an integer in the range
  * [0,255].  That's what the function `f` is for!
  */
-
+__declspec(target(mic))
 template <class Sim, typename F>
 void write_pgm(const char* fname, const Sim& u, F f)
 {
@@ -39,7 +39,7 @@ void write_pgm(const char* fname, const Sim& u, F f)
  * in the first two entries, then raw single-precision raster pictures.
  * 
  */
-
+__declspec(target(mic))
 template <class Sim>
 class SimViz {
 public:

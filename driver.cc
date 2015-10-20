@@ -35,7 +35,7 @@
  * a `Central2D` solver for the `Shallow2D` physics with a `MinMod`
  * limiter:
  */
-
+__declspec(target(mic))
 typedef Central2D< Shallow2D, MinMod<Shallow2D::real> > Sim;
 
 /**
@@ -53,7 +53,7 @@ void dam_break(Sim::vec& u, double x, double y)
 {
     x -= 1;
     y -= 1;
-    u[0] = 1.0 + 0.5*(x*x + y*y < 0.25+1e-5);
+    u[0] = 1.0f + 0.5f*(x*x + y*y < 0.25f+1e-5);
     u[1] = 0;
     u[2] = 0;
 }
