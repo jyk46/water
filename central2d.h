@@ -492,8 +492,8 @@ void Central2D<Physics, Limiter>::solution_check()
     real hmin = u(nghost,nghost)[0];
     real hmax = hmin;
 
-    #pragma simd
     for (int j = nghost; j < ny+nghost; ++j)
+        #pragma simd
         for (int i = nghost; i < nx+nghost; ++i) {
             // vec& uij = u(i,j);
             // real h = uij[0];
