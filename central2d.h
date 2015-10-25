@@ -279,7 +279,11 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
         for (int ix = 0; ix < nx_all; ++ix) {
             real cell_cx, cell_cy;
             // Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
-            Physics::flux(f(ix,iy).data(), g(ix,iy).data(), u(ix,iy).data());
+            real *u  = u(ix, iy).data();
+            real *fu = f(ix, iy).data();
+            real *gu = g(ix, iy).data();
+
+            Physics::flux(fu, gu, u);
             Physics::wave_speed(cell_cx, cell_cy, u(ix,iy));
             cx = max(cx, cell_cx);
             cy = max(cy, cell_cy);
@@ -345,7 +349,11 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     for (int iy = 1; iy < ny_all-1; ++iy) {
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
-            vec uh = u(ix,iy);// IMPORTANT: must not modify u(ix,iy)!!!
+            // IMPORTANT: must not modify u(ix,iy)!!!
+            //       AKA: by not doing vec &uh = u(ix, iy);
+            //                             ^
+            //            this data gets copied
+            vec uh = u(ix,iy);
             real *uh_cpy = uh.data();     __assume_aligned(uh_cpy, Physics::VEC_ALIGN);
             real *fh = fx(ix, iy).data(); __assume_aligned(fh,     Physics::VEC_ALIGN);
             real *gh = gy(ix, iy).data(); __assume_aligned(gh,     Physics::VEC_ALIGN);
