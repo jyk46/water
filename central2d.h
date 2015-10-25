@@ -278,12 +278,12 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
     for (int iy = 0; iy < ny_all; ++iy) {
         for (int ix = 0; ix < nx_all; ++ix) {
             real cell_cx, cell_cy;
-            // Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
-            real *uu = u(ix, iy).data();
-            real *fu = f(ix, iy).data();
-            real *gu = g(ix, iy).data();
+            Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
+            // real *uu = u(ix, iy).data();
+            // real *fu = f(ix, iy).data();
+            // real *gu = g(ix, iy).data();
 
-            Physics::flux(fu, gu, uu);
+            // Physics::flux(fu, gu, uu);
             Physics::wave_speed(cell_cx, cell_cy, u(ix,iy));
             cx = max(cx, cell_cx);
             cy = max(cy, cell_cy);
@@ -363,8 +363,8 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
                 uh_cpy[m] -= dtcdx2 * fh[m];
                 uh_cpy[m] -= dtcdy2 * gh[m];
             }
-            // Physics::flux(f(ix,iy), g(ix,iy), uh);
-            Physics::flux(f(ix,iy).data(), g(ix,iy).data(), uh_cpy);
+            Physics::flux(f(ix,iy), g(ix,iy), uh);
+            // Physics::flux(f(ix,iy).data(), g(ix,iy).data(), uh_cpy);
         }
     }
 
