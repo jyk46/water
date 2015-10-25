@@ -152,6 +152,8 @@ int main(int argc, char** argv)
         fprintf(stderr, "Unknown initial conditions\n");
     }
 
+    printf("# PROBLEM SIZE: %d\n", nx);
+
 #if defined _SERIAL
     Sim sim(width,width, nx,nx);
 #elif defined _PARALLEL_NODE
