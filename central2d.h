@@ -279,11 +279,11 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
         for (int ix = 0; ix < nx_all; ++ix) {
             real cell_cx, cell_cy;
             // Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
-            real *u  = u(ix, iy).data();
+            real *uu = u(ix, iy).data();
             real *fu = f(ix, iy).data();
             real *gu = g(ix, iy).data();
 
-            Physics::flux(fu, gu, u);
+            Physics::flux(fu, gu, uu);
             Physics::wave_speed(cell_cx, cell_cy, u(ix,iy));
             cx = max(cx, cell_cx);
             cy = max(cy, cell_cy);
