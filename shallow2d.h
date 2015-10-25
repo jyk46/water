@@ -68,7 +68,6 @@ struct Shallow2D {
     #else // GCC
         typedef __attribute__ ((aligned(16))) std::array<real, VEC_DIM> vec;
     #endif
-    // typedef std::array<real, VEC_DIM> vec;
 
     // allow loop unrolling over `vec`
     static constexpr int vec_size  = VEC_DIM;
@@ -83,8 +82,6 @@ struct Shallow2D {
         __assume_aligned(FU, VEC_ALIGN);
         __assume_aligned(GU, VEC_ALIGN);
         __assume_aligned(U,  VEC_ALIGN);
-
-        // #pragma simd
 
         real h = U[0], hu = U[1], hv = U[2], ignore = U[3];
 

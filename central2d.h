@@ -156,14 +156,14 @@ private:
     #else // GCC
         typedef __attribute__ ((aligned(BYTE_ALIGN))) std::vector<vec, aligned_allocator<vec, BYTE_ALIGN>> aligned_vector;
     #endif
-    /*std::vector<vec>*/aligned_vector u_;            // Solution values
-    /*std::vector<vec>*/aligned_vector f_;            // Fluxes in x
-    /*std::vector<vec>*/aligned_vector g_;            // Fluxes in y
-    /*std::vector<vec>*/aligned_vector ux_;           // x differences of u
-    /*std::vector<vec>*/aligned_vector uy_;           // y differences of u
-    /*std::vector<vec>*/aligned_vector fx_;           // x differences of f
-    /*std::vector<vec>*/aligned_vector gy_;           // y differences of g
-    /*std::vector<vec>*/aligned_vector v_;            // Solution values at next step
+    aligned_vector u_;            // Solution values
+    aligned_vector f_;            // Fluxes in x
+    aligned_vector g_;            // Fluxes in y
+    aligned_vector ux_;           // x differences of u
+    aligned_vector uy_;           // y differences of u
+    aligned_vector fx_;           // x differences of f
+    aligned_vector gy_;           // y differences of g
+    aligned_vector v_;            // Solution values at next step
 
     // Array accessor functions
 
@@ -196,18 +196,13 @@ private:
     }
 
     // Stages of the main algorithm
-    __declspec(target(mic))
     void apply_periodic();
 
-    __declspec(target(mic))
     void compute_fg_speeds(real& cx, real& cy);
     
-    __declspec(target(mic))
     void limited_derivs();
     
-    __declspec(target(mic))
     void compute_step(int io, real dt);
-
 };
 
 
@@ -221,7 +216,6 @@ private:
  * cell $(i,j)$ is the subdomain 
  * $[i \Delta x, (i+1) \Delta x] \times [j \Delta y, (j+1) \Delta y]$.
  */
-__declspec(target(mic))
 template <class Physics, class Limiter>
 template <typename F>
 void Central2D<Physics, Limiter>::init(F f)
@@ -247,7 +241,6 @@ void Central2D<Physics, Limiter>::init(F f)
  * to the corresponding canonical values `(ix+p*nx,iy+q*ny)` for some
  * integers `p` and `q`.
  */
-__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::apply_periodic()
 {
@@ -276,14 +269,13 @@ void Central2D<Physics, Limiter>::apply_periodic()
  * we can choose a time step that respects the specified upper
  * bound on the CFL number).
  */
-__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
 {
     using namespace std;
     real cx = 1.0e-15;
     real cy = 1.0e-15;
-    for (int iy = 0; iy < ny_all; ++iy)
+    for (int iy = 0; iy < ny_all; ++iy) {
         for (int ix = 0; ix < nx_all; ++ix) {
             real cell_cx, cell_cy;
             // Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
@@ -292,6 +284,7 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
             cx = max(cx, cell_cx);
             cy = max(cy, cell_cy);
         }
+    }
     cx_ = cx;
     cy_ = cy;
 }
@@ -303,11 +296,10 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
  * derivatives of the fluxes and the solution values at each cell.
  * In order to maintain stability, we apply a limiter here.
  */
-__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::limited_derivs()
 {
-    for (int iy = 1; iy < ny_all-1; ++iy)
+    for (int iy = 1; iy < ny_all-1; ++iy) {
         for (int ix = 1; ix < nx_all-1; ++ix) {
 
             // x derivs
@@ -318,6 +310,7 @@ void Central2D<Physics, Limiter>::limited_derivs()
             limdiff( uy(ix,iy), u(ix,iy-1), u(ix,iy), u(ix,iy+1) );
             limdiff( gy(ix,iy), g(ix,iy-1), g(ix,iy), g(ix,iy+1) );
         }
+    }
 }
 
 
@@ -342,7 +335,6 @@ void Central2D<Physics, Limiter>::limited_derivs()
  * mesh cell in each direction, essentially resetting to the primary
  * indexing scheme.
  */
-__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 {
@@ -355,8 +347,8 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
         for (int ix = 1; ix < nx_all-1; ++ix) {
             vec uh = u(ix,iy);// IMPORTANT: must not modify u(ix,iy)!!!
             real *uh_cpy = uh.data();     __assume_aligned(uh_cpy, Physics::VEC_ALIGN);
-            real *fh = fx(ix, iy).data(); __assume_aligned(fh, Physics::VEC_ALIGN);
-            real *gh = gy(ix, iy).data(); __assume_aligned(gh, Physics::VEC_ALIGN);
+            real *fh = fx(ix, iy).data(); __assume_aligned(fh,     Physics::VEC_ALIGN);
+            real *gh = gy(ix, iy).data(); __assume_aligned(gh,     Physics::VEC_ALIGN);
 
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
@@ -378,13 +370,13 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
              *     u_x1_y1 <- u(ix+1, iy+1)
              */
             // The final result
-            real *v_ix_iy = v(ix, iy).data();       __assume_aligned(v_ix_iy, Physics::VEC_ALIGN);
+            real *v_ix_iy = v(ix, iy).data();       __assume_aligned(v_ix_iy,  Physics::VEC_ALIGN);
 
             // grab u
-            real *u_x1_y0 = u(ix+1, iy  ).data();   __assume_aligned(u_x1_y0, Physics::VEC_ALIGN);
-            real *u_x0_y0 = u(ix  , iy  ).data();   __assume_aligned(u_x0_y0, Physics::VEC_ALIGN);
-            real *u_x0_y1 = u(ix  , iy+1).data();   __assume_aligned(u_x0_y1, Physics::VEC_ALIGN);
-            real *u_x1_y1 = u(ix+1, iy+1).data();   __assume_aligned(u_x1_y1, Physics::VEC_ALIGN);
+            real *u_x1_y0 = u(ix+1, iy  ).data();   __assume_aligned(u_x1_y0,  Physics::VEC_ALIGN);
+            real *u_x0_y0 = u(ix  , iy  ).data();   __assume_aligned(u_x0_y0,  Physics::VEC_ALIGN);
+            real *u_x0_y1 = u(ix  , iy+1).data();   __assume_aligned(u_x0_y1,  Physics::VEC_ALIGN);
+            real *u_x1_y1 = u(ix+1, iy+1).data();   __assume_aligned(u_x1_y1,  Physics::VEC_ALIGN);
 
             // grab ux
             real *ux_x0_y0 = ux(ix  , iy  ).data(); __assume_aligned(ux_x0_y0, Physics::VEC_ALIGN);
@@ -399,16 +391,16 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             real *uy_x1_y1 = uy(ix+1, iy+1).data(); __assume_aligned(uy_x1_y1, Physics::VEC_ALIGN);
 
             // grab f
-            real *f_x0_y0 = f(ix  , iy  ).data();   __assume_aligned(f_x0_y0, Physics::VEC_ALIGN);
-            real *f_x1_y0 = f(ix+1, iy  ).data();   __assume_aligned(f_x1_y0, Physics::VEC_ALIGN);
-            real *f_x0_y1 = f(ix  , iy+1).data();   __assume_aligned(f_x0_y1, Physics::VEC_ALIGN);
-            real *f_x1_y1 = f(ix+1, iy+1).data();   __assume_aligned(f_x1_y1, Physics::VEC_ALIGN);
+            real *f_x0_y0 = f(ix  , iy  ).data();   __assume_aligned(f_x0_y0,  Physics::VEC_ALIGN);
+            real *f_x1_y0 = f(ix+1, iy  ).data();   __assume_aligned(f_x1_y0,  Physics::VEC_ALIGN);
+            real *f_x0_y1 = f(ix  , iy+1).data();   __assume_aligned(f_x0_y1,  Physics::VEC_ALIGN);
+            real *f_x1_y1 = f(ix+1, iy+1).data();   __assume_aligned(f_x1_y1,  Physics::VEC_ALIGN);
 
             // grab g
-            real *g_x0_y0 = g(ix  , iy  ).data();   __assume_aligned(g_x0_y0, Physics::VEC_ALIGN);
-            real *g_x1_y0 = g(ix+1, iy  ).data();   __assume_aligned(g_x1_y0, Physics::VEC_ALIGN);
-            real *g_x0_y1 = g(ix  , iy+1).data();   __assume_aligned(g_x0_y1, Physics::VEC_ALIGN);
-            real *g_x1_y1 = g(ix+1, iy+1).data();   __assume_aligned(g_x1_y1, Physics::VEC_ALIGN);
+            real *g_x0_y0 = g(ix  , iy  ).data();   __assume_aligned(g_x0_y0,  Physics::VEC_ALIGN);
+            real *g_x1_y0 = g(ix+1, iy  ).data();   __assume_aligned(g_x1_y0,  Physics::VEC_ALIGN);
+            real *g_x0_y1 = g(ix  , iy+1).data();   __assume_aligned(g_x0_y1,  Physics::VEC_ALIGN);
+            real *g_x1_y1 = g(ix+1, iy+1).data();   __assume_aligned(g_x1_y1,  Physics::VEC_ALIGN);
 
             #pragma simd
             for(int m = 0; m < Physics::vec_size; ++m) {
@@ -450,37 +442,27 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
  * We always take an even number of steps so that the solution
  * at the end lives on the main grid instead of the staggered grid. 
  */
-__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::run(real tfinal)
 {
-    #pragma offload target(mic)
-    {
-        #pragma omp parallel
-        {
-            // int tid = omp_get_thread_num();
-            // std::string meh = " ~ T[" + std::to_string(tid) + "] ~ ";
-            // std::cout << meh << std::endl;
-            bool done = false;
-            real t = 0.0f;
-            while (!done) {
-                real dt;
-                for (int io = 0; io < 2; ++io) {
-                    real cx, cy;
-                    apply_periodic();
-                    compute_fg_speeds(cx, cy);
-                    limited_derivs();
-                    if (io == 0) {
-                        dt = cfl / std::max(cx/dx, cy/dy);
-                        if (t + 2.0f*dt >= tfinal) {
-                            dt = (tfinal-t) * 0.5f;
-                            done = true;
-                        }
-                    }
-                    compute_step(io, dt);
-                    t += dt;
+    bool done = false;
+    real t = 0.0f;
+    while (!done) {
+        real dt;
+        for (int io = 0; io < 2; ++io) {
+            real cx, cy;
+            apply_periodic();
+            compute_fg_speeds(cx, cy);
+            limited_derivs();
+            if (io == 0) {
+                dt = cfl / std::max(cx/dx, cy/dy);
+                if (t + 2.0f*dt >= tfinal) {
+                    dt = (tfinal-t) * 0.5f;
+                    done = true;
                 }
             }
+            compute_step(io, dt);
+            t += dt;
         }
     }
 }
@@ -496,7 +478,6 @@ void Central2D<Physics, Limiter>::run(real tfinal)
  * information about these conserved quantities (and about the range
  * of water heights).
  */
-__declspec(target(mic))
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::solution_check()
 {
@@ -508,7 +489,7 @@ void Central2D<Physics, Limiter>::solution_check()
     real hmin = u(nghost,nghost)[0];
     real hmax = hmin;
 
-    for (int j = nghost; j < ny+nghost; ++j)
+    for (int j = nghost; j < ny+nghost; ++j) {
         for (int i = nghost; i < nx+nghost; ++i) {
             vec& uij = u(i,j);
             real h   = uij[0];
@@ -519,6 +500,7 @@ void Central2D<Physics, Limiter>::solution_check()
             hmin     = min(h, hmin);
             assert( h > 0) ;
         }
+    }
     real cell_area = dx*dy;
     h_sum  *= cell_area;
     hu_sum *= cell_area;
