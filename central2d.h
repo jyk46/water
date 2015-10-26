@@ -319,7 +319,6 @@ void Central2D<Physics, Limiter>::limited_derivs()
             // limdiff( uy(ix,iy), u(ix,iy-1), u(ix,iy), u(ix,iy+1) );
             // limdiff( gy(ix,iy), g(ix,iy-1), g(ix,iy), g(ix,iy+1) );
 
-            #pragma simd
             {
                 //
                 // x derivs
