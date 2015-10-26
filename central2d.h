@@ -188,9 +188,14 @@ private:
     inline vec& uwrap(int ix, int iy)  { return u_[ioffset(ix,iy)]; }
 
     // Apply limiter to all components in a vector
-    inline static void limdiff(vec& du, const vec& um, const vec& u0, const vec& up) {
+    // inline static void limdiff(vec& du, const vec& um, const vec& u0, const vec& up) {
+    inline static void limdiff(real *du, const real *um, const real *u0, const real *up) {
         // for (int m = 0; m < du.size(); ++m)
-        #pragma unroll
+        __assume_aligned(du, Physics::VEC_ALIGN);
+        __assume_aligned(um, Physics::VEC_ALIGN);
+        __assume_aligned(u0, Physics::VEC_ALIGN);
+        __assume_aligned(up, Physics::VEC_ALIGN);
+        #pragma simd
         for(int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }

@@ -58,21 +58,21 @@
  */
 template <class real>
 struct MinMod {
-    static constexpr real theta = 2.0;
+    static constexpr real theta = 2.0f;
 
     // Branch-free computation of minmod of two numbers
-    static real xmin(real a, real b) {
+    inline static real xmin(real a, real b) {
         using namespace std;
-        return ((copysign((real) 0.5, a) +
-                 copysign((real) 0.5, b)) *
-                min( abs(a), abs(b) ));
+        return ((copysign((real) 0.5f, a) +
+                 copysign((real) 0.5f, b)) *
+                min( fabs(a), fabs(b) ));
     }
 
     // Limited combined slope estimate
-    static real limdiff(real um, real u0, real up) {
-        real du1 = u0-um;         // Difference to left
-        real du2 = up-u0;         // Difference to right
-        real duc = 0.5*(du1+du2); // Centered difference
+    inline static real limdiff(real um, real u0, real up) {
+        real du1 = u0-um;          // Difference to left
+        real du2 = up-u0;          // Difference to right
+        real duc = 0.5f*(du1+du2); // Centered difference
         return xmin( theta*xmin(du1, du2), duc );
     }
 };
