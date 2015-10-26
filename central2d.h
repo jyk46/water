@@ -195,7 +195,7 @@ private:
         __assume_aligned(um, Physics::VEC_ALIGN);
         __assume_aligned(u0, Physics::VEC_ALIGN);
         __assume_aligned(up, Physics::VEC_ALIGN);
-        #pragma unroll
+        #pragma simd
         for(int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
