@@ -318,13 +318,43 @@ void Central2D<Physics, Limiter>::limited_derivs()
             // // y derivs
             // limdiff( uy(ix,iy), u(ix,iy-1), u(ix,iy), u(ix,iy+1) );
             // limdiff( gy(ix,iy), g(ix,iy-1), g(ix,iy), g(ix,iy+1) );
-            // x derivs
-            limdiff( ux(ix,iy).data(), u(ix-1,iy).data(), u(ix,iy).data(), u(ix+1,iy).data() );
-            limdiff( fx(ix,iy).data(), f(ix-1,iy).data(), f(ix,iy).data(), f(ix+1,iy).data() );
 
+            //
+            // x derivs
+            //
+
+            real *ux_x0_y0 = ux(ix, iy).data();
+            real *u_xM1_y0 = u(ix-1, iy).data();
+            real *u_x0_y0  = u(ix, iy).data();
+            real *u_xP1_y0 = u(ix+1, iy).data();
+
+            // limdiff( ux(ix,iy).data(), u(ix-1,iy).data(), u(ix,iy).data(), u(ix+1,iy).data() );
+            limdiff( ux_x0_y0, u_xM1_y0, u_x0_y0, u_xP1_y );
+
+            real *fx_x0_y0 = fx(ix, iy).data();
+            real *f_xM1_y0 = f(ix-1, iy).data();
+            real *f_x0_y0  = f(ix, iy).data();
+            real *f_xP1_y0 = f(ix+1, iy).data();
+
+            // limdiff( fx(ix,iy).data(), f(ix-1,iy).data(), f(ix,iy).data(), f(ix+1,iy).data() );
+            limdiff( fx_x0_y0, f_xM1_y0, f_x0_y0, f_xP1_y );
+
+            //
             // y derivs
-            limdiff( uy(ix,iy).data(), u(ix,iy-1).data(), u(ix,iy).data(), u(ix,iy+1).data() );
-            limdiff( gy(ix,iy).data(), g(ix,iy-1).data(), g(ix,iy).data(), g(ix,iy+1).data() );
+            //
+            real *uy_x0_y0 = uy(ix, iy).data();
+            real *u_x0_yM1 = u(ix, iy-1).data();
+            real *u_x0_yP1 = u(ix, iy+1).data();
+            // limdiff( uy(ix,iy).data(), u(ix,iy-1).data(), u(ix,iy).data(), u(ix,iy+1).data() );
+            limdiff( uy_x0_y0, u_x0_yM1, u_x0_y0, u_x0_yP1 );
+
+            real *gy_x0_y0 = gy(ix, iy).data();
+            real *g_x0_yM1 = g(ix, iy-1).data();
+            real *g_x0_y0  = g(ix, iy).data();
+            real *g_x0_yP1 = g(ix, iy+1).data();
+
+            // limdiff( gy(ix,iy).data(), g(ix,iy-1).data(), g(ix,iy).data(), g(ix,iy+1).data() );
+            limdiff( gy_x0_y0, g_x0_yM1, g_x0_y0, g_x0_yP1 );
         }
     }
 }
