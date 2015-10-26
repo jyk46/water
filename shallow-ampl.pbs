@@ -5,7 +5,10 @@
 #PBS -N shallow
 #PBS -j oe
 
+# if not called with SIZE=???, set to 200
+DISPATCH_SIZE=${SIZE:-200}
+
 module load cs5220
 cd $PBS_O_WORKDIR
 amplxe-cl -collect advanced-hotspots \
-./shallow -i dam_break -o dam_break.out
+./shallow -i dam_break -o dam_break.out -n $DISPATCH_SIZE
