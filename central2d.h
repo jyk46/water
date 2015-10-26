@@ -195,7 +195,7 @@ private:
         __assume_aligned(um, Physics::VEC_ALIGN);
         __assume_aligned(u0, Physics::VEC_ALIGN);
         __assume_aligned(up, Physics::VEC_ALIGN);
-        #pragma simd
+        #pragma unroll
         for(int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
@@ -311,13 +311,20 @@ void Central2D<Physics, Limiter>::limited_derivs()
     for (int iy = 1; iy < ny_all-1; ++iy) {
         for (int ix = 1; ix < nx_all-1; ++ix) {
 
+            // // x derivs
+            // limdiff( ux(ix,iy), u(ix-1,iy), u(ix,iy), u(ix+1,iy) );
+            // limdiff( fx(ix,iy), f(ix-1,iy), f(ix,iy), f(ix+1,iy) );
+
+            // // y derivs
+            // limdiff( uy(ix,iy), u(ix,iy-1), u(ix,iy), u(ix,iy+1) );
+            // limdiff( gy(ix,iy), g(ix,iy-1), g(ix,iy), g(ix,iy+1) );
             // x derivs
-            limdiff( ux(ix,iy), u(ix-1,iy), u(ix,iy), u(ix+1,iy) );
-            limdiff( fx(ix,iy), f(ix-1,iy), f(ix,iy), f(ix+1,iy) );
+            limdiff( ux(ix,iy).data(), u(ix-1,iy).data(), u(ix,iy).data(), u(ix+1,iy).data() );
+            limdiff( fx(ix,iy).data(), f(ix-1,iy).data(), f(ix,iy).data(), f(ix+1,iy).data() );
 
             // y derivs
-            limdiff( uy(ix,iy), u(ix,iy-1), u(ix,iy), u(ix,iy+1) );
-            limdiff( gy(ix,iy), g(ix,iy-1), g(ix,iy), g(ix,iy+1) );
+            limdiff( uy(ix,iy).data(), u(ix,iy-1).data(), u(ix,iy).data(), u(ix,iy+1).data() );
+            limdiff( gy(ix,iy).data(), g(ix,iy-1).data(), g(ix,iy).data(), g(ix,iy+1).data() );
         }
     }
 }
