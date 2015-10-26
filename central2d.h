@@ -329,7 +329,7 @@ void Central2D<Physics, Limiter>::limited_derivs()
             real *u_xP1_y0 = u(ix+1, iy).data();
 
             // limdiff( ux(ix,iy).data(), u(ix-1,iy).data(), u(ix,iy).data(), u(ix+1,iy).data() );
-            limdiff( ux_x0_y0, u_xM1_y0, u_x0_y0, u_xP1_y );
+            limdiff( ux_x0_y0, u_xM1_y0, u_x0_y0, u_xP1_y0 );
 
             real *fx_x0_y0 = fx(ix, iy).data();
             real *f_xM1_y0 = f(ix-1, iy).data();
