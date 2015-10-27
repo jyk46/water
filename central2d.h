@@ -150,7 +150,8 @@ private:
 
     // sizeof(vec)*4 = 4*sizeof(float)*4 = 4*4*4 = 64
     // desired; 64 is the necessary alignment for AVX512
-    #define BYTE_ALIGN 64
+    // #define BYTE_ALIGN 64
+    #define BYTE_ALIGN 4096
     #ifdef __INTEL_COMPILER
         typedef __declspec(align(BYTE_ALIGN)) std::vector<vec, aligned_allocator<vec, BYTE_ALIGN>> aligned_vector;
     #else // GCC
