@@ -63,11 +63,6 @@ struct Shallow2D {
     // Type parameters for solver
     #define VEC_DIM 4 // change this and we all die...
     typedef float real;
-    #ifdef __INTEL_COMPILER
-        typedef __declspec(align(16)) std::array<real, VEC_DIM> vec;
-    #else // GCC
-        typedef __attribute__ ((aligned(16))) std::array<real, VEC_DIM> vec;
-    #endif
 
     // allow loop unrolling over `vec`
     static constexpr int vec_size  = VEC_DIM;
@@ -77,11 +72,10 @@ struct Shallow2D {
     static constexpr real g = 9.8;
 
     // Compute shallow water fluxes F(U), G(U)
-    static void flux(vec& FU, vec& GU, const vec& U) {
-    // inline static void flux(real *FU, real *GU, const real *U) {
-    //     __assume_aligned(FU, VEC_ALIGN);
-    //     __assume_aligned(GU, VEC_ALIGN);
-    //     __assume_aligned(U,  VEC_ALIGN);
+    inline static void flux(real *FU, real *GU, const real *U) {
+        __assume_aligned(FU, VEC_ALIGN);
+        __assume_aligned(GU, VEC_ALIGN);
+        __assume_aligned(U,  VEC_ALIGN);
 
         real h = U[0], hu = U[1], hv = U[2], ignore = U[3];
 
@@ -97,7 +91,9 @@ struct Shallow2D {
     }
 
     // Compute shallow water wave speed
-    static void wave_speed(real& cx, real& cy, const vec& U) {
+    static void wave_speed(real& cx, real& cy, const real *U) {
+        __assume_aligned(U,  VEC_ALIGN);
+
         using namespace std;
         real h = U[0], hu = U[1], hv = U[2];
         real root_gh = sqrt(g * h);  // NB: Don't let h go negative!
