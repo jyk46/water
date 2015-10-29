@@ -6,6 +6,8 @@
 #include <cassert>
 #include <vector>
 
+#include <xmmintrin.h>// _mm_malloc
+
 //ldoc on
 /**
  * # Jiang-Tadmor central difference scheme
@@ -96,7 +98,6 @@ template <class Physics, class Limiter>
 class Central2D {
 public:
     typedef typename Physics::real real;
-    typedef typename Physics::vec  vec;
 
     Central2D(real w, real h,     // Domain width / height
               int nx, int ny,     // Number of cells in x/y (without ghosts)
@@ -106,14 +107,14 @@ public:
         ny_all(ny + 2*nghost),
         dx(w/nx), dy(h/ny),
         cfl(cfl), 
-        u_ (nx_all * ny_all),
-        f_ (nx_all * ny_all),
-        g_ (nx_all * ny_all),
-        ux_(nx_all * ny_all),
-        uy_(nx_all * ny_all),
-        fx_(nx_all * ny_all),
-        gy_(nx_all * ny_all),
-        v_ (nx_all * ny_all) {}
+        u_ (nx_all * ny_all * Physics::vec_size),
+        f_ (nx_all * ny_all * Physics::vec_size),
+        g_ (nx_all * ny_all * Physics::vec_size),
+        ux_(nx_all * ny_all * Physics::vec_size),
+        uy_(nx_all * ny_all * Physics::vec_size),
+        fx_(nx_all * ny_all * Physics::vec_size),
+        gy_(nx_all * ny_all * Physics::vec_size),
+        v_ (nx_all * ny_all * Physics::vec_size) {}
 
     // Advance from time 0 to time tfinal
     void run(real tfinal);
@@ -130,12 +131,12 @@ public:
     int ysize() const { return ny; }
     
     // Read / write elements of simulation state
-    vec&       operator()(int i, int j) {
-        return u_[offset(i+nghost,j+nghost)];
+    real*       operator()(int i, int j) {
+        return &u_[offset(i+nghost,j+nghost)];
     }
     
-    const vec& operator()(int i, int j) const {
-        return u_[offset(i+nghost,j+nghost)];
+    const real* operator()(int i, int j) const {
+        return &u_[offset(i+nghost,j+nghost)];
     }
     
 private:
@@ -146,28 +147,28 @@ private:
     const real dx, dy;         // Cell size in x/y
     const real cfl;            // Allowed CFL number
 
-    std::vector<vec> u_;            // Solution values
-    std::vector<vec> f_;            // Fluxes in x
-    std::vector<vec> g_;            // Fluxes in y
-    std::vector<vec> ux_;           // x differences of u
-    std::vector<vec> uy_;           // y differences of u
-    std::vector<vec> fx_;           // x differences of f
-    std::vector<vec> gy_;           // y differences of g
-    std::vector<vec> v_;            // Solution values at next step
+    std::vector<real> u_;            // Solution values
+    std::vector<real> f_;            // Fluxes in x
+    std::vector<real> g_;            // Fluxes in y
+    std::vector<real> ux_;           // x differences of u
+    std::vector<real> uy_;           // y differences of u
+    std::vector<real> fx_;           // x differences of f
+    std::vector<real> gy_;           // y differences of g
+    std::vector<real> v_;            // Solution values at next step
 
     // Array accessor functions
 
-    int offset(int ix, int iy) const { return iy*nx_all+ix; }
+    int offset(int ix, int iy) const { return (iy*nx_all+ix)*Physics::vec_size; }
 
-    vec& u(int ix, int iy)    { return u_[offset(ix,iy)]; }
-    vec& v(int ix, int iy)    { return v_[offset(ix,iy)]; }
-    vec& f(int ix, int iy)    { return f_[offset(ix,iy)]; }
-    vec& g(int ix, int iy)    { return g_[offset(ix,iy)]; }
+    real* u(int ix, int iy)    { return &u_[offset(ix,iy)]; }
+    real* v(int ix, int iy)    { return &v_[offset(ix,iy)]; }
+    real* f(int ix, int iy)    { return &f_[offset(ix,iy)]; }
+    real* g(int ix, int iy)    { return &g_[offset(ix,iy)]; }
 
-    vec& ux(int ix, int iy)   { return ux_[offset(ix,iy)]; }
-    vec& uy(int ix, int iy)   { return uy_[offset(ix,iy)]; }
-    vec& fx(int ix, int iy)   { return fx_[offset(ix,iy)]; }
-    vec& gy(int ix, int iy)   { return gy_[offset(ix,iy)]; }
+    real* ux(int ix, int iy)   { return &ux_[offset(ix,iy)]; }
+    real* uy(int ix, int iy)   { return &uy_[offset(ix,iy)]; }
+    real* fx(int ix, int iy)   { return &fx_[offset(ix,iy)]; }
+    real* gy(int ix, int iy)   { return &gy_[offset(ix,iy)]; }
 
     // Wrapped accessor (periodic BC)
     int ioffset(int ix, int iy) {
@@ -175,10 +176,10 @@ private:
                        (iy+ny-nghost) % ny + nghost );
     }
 
-    vec& uwrap(int ix, int iy)  { return u_[ioffset(ix,iy)]; }
+    real* uwrap(int ix, int iy)  { return &u_[ioffset(ix,iy)]; }
 
     // Apply limiter to all components in a vector
-    static void limdiff(vec& du, const vec& um, const vec& u0, const vec& up) {
+    static void limdiff(real *du, const real *um, const real *u0, const real *up) {
         #pragma unroll
         for (int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
@@ -236,15 +237,37 @@ void Central2D<Physics, Limiter>::apply_periodic()
     // Copy data between right and left boundaries
     for (int iy = 0; iy < ny_all; ++iy)
         for (int ix = 0; ix < nghost; ++ix) {
-            u(ix,          iy) = uwrap(ix,          iy);
-            u(nx+nghost+ix,iy) = uwrap(nx+nghost+ix,iy);
+            // u(ix,          iy) = uwrap(ix,          iy);
+            // u(nx+nghost+ix,iy) = uwrap(nx+nghost+ix,iy);
+
+            real *u_xy        = u(ix, iy);
+            real *uwrap_xy    = uwrap(ix, iy);
+            real *u_ghost     = u(nx+nghost+ix,iy);
+            real *uwrap_ghost = uwrap(nx+nghost+ix,iy);
+
+            #pragma unroll
+            for(int m = 0; m < Physics::vec_size; ++m) {
+                u_xy[m]    = uwrap_xy[m];
+                u_ghost[m] = uwrap_ghost[m];
+            }
         }
 
     // Copy data between top and bottom boundaries
     for (int ix = 0; ix < nx_all; ++ix)
         for (int iy = 0; iy < nghost; ++iy) {
-            u(ix,          iy) = uwrap(ix,          iy);
-            u(ix,ny+nghost+iy) = uwrap(ix,ny+nghost+iy);
+            // u(ix,          iy) = uwrap(ix,          iy);
+            // u(ix,ny+nghost+iy) = uwrap(ix,ny+nghost+iy);
+
+            real *u_xy        = u(ix, iy);
+            real *uwrap_xy    = uwrap(ix, iy);
+            real *u_ghost     = u(ix,ny+nghost+iy);
+            real *uwrap_ghost = uwrap(ix,ny+nghost+iy);
+
+            #pragma unroll
+            for(int m = 0; m < Physics::vec_size; ++m) {
+                u_xy[m]    = uwrap_xy[m];
+                u_ghost[m] = uwrap_ghost[m];
+            }
         }
 }
 
@@ -330,18 +353,27 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     real dtcdx2 = 0.5 * dt / dx;
     real dtcdy2 = 0.5 * dt / dy;
 
+    real *uh_copy = (real *)malloc(sizeof(real)*Physics::vec_size);//, sizeof(real)*Physics::vec_size);
+
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy)
         for (int ix = 1; ix < nx_all-1; ++ix) {
-            vec uh = u(ix,iy);
+            real *uh = u(ix,iy);
+
+            // be careful not to modify u!!!            
+            #pragma unroll
+            for(int m = 0; m < Physics::vec_size; ++m) uh_copy[m] = uh[m];
             
             #pragma unroll
             for (int m = 0; m < Physics::vec_size; ++m) {
-                uh[m] -= dtcdx2 * fx(ix,iy)[m];
-                uh[m] -= dtcdy2 * gy(ix,iy)[m];
+                uh_copy[m] -= dtcdx2 * fx(ix,iy)[m];
+                uh_copy[m] -= dtcdy2 * gy(ix,iy)[m];
             }
-            Physics::flux(f(ix,iy), g(ix,iy), uh);
+            Physics::flux(f(ix,iy), g(ix,iy), uh_copy);
         }
+
+    free(uh_copy);
+    // _mm_free(uh_copy);
 
     // Corrector (finish the step)
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy)
@@ -366,7 +398,12 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     // Copy from v storage back to main grid
     for (int j = nghost; j < ny+nghost; ++j){
         for (int i = nghost; i < nx+nghost; ++i){
-            u(i,j) = v(i-io,j-io);
+            // u(i,j) = v(i-io,j-io);
+            real *u_ij = u(i, j);
+            real *v_ij_io = v(i-io, j-io);
+
+            #pragma unroll
+            for(int m = 0; m < Physics::vec_size; ++m) u_ij[m] = v_ij_io[m];
         }
     }
 }
@@ -432,7 +469,7 @@ void Central2D<Physics, Limiter>::solution_check()
     real hmax = hmin;
     for (int j = nghost; j < ny+nghost; ++j)
         for (int i = nghost; i < nx+nghost; ++i) {
-            vec& uij = u(i,j);
+            real *uij = u(i,j);
             real h = uij[0];
             h_sum += h;
             hu_sum += uij[1];

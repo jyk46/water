@@ -43,7 +43,7 @@ typedef Central2D< Shallow2D, MinMod<Shallow2D::real> > Sim;
  */
 
 // Circular dam break problem
-void dam_break(Sim::vec& u, double x, double y)
+void dam_break(Sim::real *u, double x, double y)
 {
     x -= 1;
     y -= 1;
@@ -53,7 +53,7 @@ void dam_break(Sim::vec& u, double x, double y)
 }
 
 // Still pond (ideally, nothing should move here!)
-void pond(Sim::vec& u, double x, double y)
+void pond(Sim::real *u, double x, double y)
 {
     u[0] = 1.0;
     u[1] = 0;
@@ -61,7 +61,7 @@ void pond(Sim::vec& u, double x, double y)
 }
 
 // River (ideally, the solver shouldn't do much with this, either)
-void river(Sim::vec& u, double x, double y)
+void river(Sim::real *u, double x, double y)
 {
     u[0] = 1.0;
     u[1] = 1.0;
@@ -70,7 +70,7 @@ void river(Sim::vec& u, double x, double y)
 
 
 // Wave on a river -- develops a shock in finite time!
-void wave(Sim::vec& u, double x, double y)
+void wave(Sim::real *u, double x, double y)
 {
     using namespace std;
     u[0] = 1.0 + 0.2 * sin(M_PI*x);
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
         }
     }
 
-    void (*icfun)(Sim::vec& u, double x, double y) = dam_break;
+    void (*icfun)(Sim::real *u, double x, double y) = dam_break;
     if (ic == "dam_break") {
         icfun = dam_break;
     } else if (ic == "pond") {
