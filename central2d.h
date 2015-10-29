@@ -480,7 +480,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             real *u_ij = u(i, j);
             real *v_ij_io = v(i-io, j-io);
 
-            #pragma unroll
+            #pragma unroll ivdep
             for(int m = 0; m < Physics::vec_size; ++m) u_ij[m] = v_ij_io[m];
         }
     }
