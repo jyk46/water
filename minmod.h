@@ -63,20 +63,37 @@ struct MinMod {
 
     // Branch-free computation of minmod of two numbers
     #pragma omp declare simd
-    static inline real xmin(real a, real b) {
-        using namespace std;
-        return ((copysign((real) 0.5f, a) +
-                 copysign((real) 0.5f, b)) *
-                min( fabs(a), fabs(b) ));
+    // #if defined _PARALLEL_DEVICE
+    // __declspec(target(mic))
+    // #endif
+    // static inline real xmin(real a, real b) {
+    static inline real xmin2s(real s, real a, real b) {
+        // using namespace std;
+        // return ((copysign((real) 0.5f, a) +
+        //          copysign((real) 0.5f, b)) *
+        //         min( fabs(a), fabs(b) ));
+        real sa = copysignf(s, a);
+        real sb = copysignf(s, b);
+        real abs_a = fabsf(a);
+        real abs_b = fabsf(b);
+        real min_abs = (abs_a < abs_b ? abs_a : abs_b);
+        return (sa+sb) * min_abs;
     }
 
     // Limited combined slope estimate
     #pragma omp declare simd
+    // #if defined _PARALLEL_DEVICE
+    // __declspec(target(mic))
+    // #endif
     static real limdiff(real um, real u0, real up) {
+        // real du1 = u0-um;         // Difference to left
+        // real du2 = up-u0;         // Difference to right
+        // real duc = 0.5f*(du1+du2); // Centered difference
+        // return xmin( theta*xmin(du1, du2), duc );
         real du1 = u0-um;         // Difference to left
         real du2 = up-u0;         // Difference to right
-        real duc = 0.5f*(du1+du2); // Centered difference
-        return xmin( theta*xmin(du1, du2), duc );
+        real duc = up-um;         // Centered difference
+        return xmin2s( 0.25f, xmin2s(theta, du1, du2), duc );
     }
 };
 
