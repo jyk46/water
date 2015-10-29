@@ -214,7 +214,6 @@ private:
         USE_ALIGN(u0, Physics::VEC_ALIGN);
         USE_ALIGN(up, Physics::VEC_ALIGN);
 
-        #pragma simd
         for (int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
@@ -323,7 +322,7 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
     real cx = 1.0e-15;
     real cy = 1.0e-15;
     for (int iy = 0; iy < ny_all; ++iy) {
-        #pragma simd
+        // #pragma simd
         for (int ix = 0; ix < nx_all; ++ix) {
             real cell_cx, cell_cy;
             Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
@@ -347,7 +346,8 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::limited_derivs()
 {
-    for (int iy = 1; iy < ny_all-1; ++iy)
+    #pragma simd
+    for (int iy = 1; iy < ny_all-1; ++iy) {
         for (int ix = 1; ix < nx_all-1; ++ix) {
 
             // x derivs
@@ -358,6 +358,7 @@ void Central2D<Physics, Limiter>::limited_derivs()
             limdiff( uy(ix,iy), u(ix,iy-1), u(ix,iy), u(ix,iy+1) );
             limdiff( gy(ix,iy), g(ix,iy-1), g(ix,iy), g(ix,iy+1) );
         }
+    }
 }
 
 
@@ -386,8 +387,8 @@ void Central2D<Physics, Limiter>::limited_derivs()
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 {
-    real dtcdx2 = 0.5 * dt / dx;
-    real dtcdy2 = 0.5 * dt / dy;
+    real dtcdx2 = 0.5f * dt / dx;
+    real dtcdy2 = 0.5f * dt / dy;
 
     // USE_ALIGN(uh_copy, Physics::VEC_ALIGN);
 
