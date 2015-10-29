@@ -94,6 +94,16 @@
  * of the domain has index (0,0).
  */
 
+#ifdef __INTEL_COMPILER
+    #define DEF_ALIGN(x) __declspec(align((x)))
+    #define USE_ALIGN(var, align) __assume_aligned((var), (align));
+#else // GCC
+    #define DEF_ALIGN(x) __attribute__ ((aligned((x))))
+    #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
+#endif
+
+#define UH_ALIGN 16
+
 template <class Physics, class Limiter>
 class Central2D {
 public:
@@ -118,7 +128,7 @@ public:
         v_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
 
         // used in compute_step
-        uh_copy = (real *)_mm_malloc(sizeof(real)*Physics::vec_size, 16);
+        uh_copy = (real *)_mm_malloc(sizeof(real)*Physics::vec_size, UH_ALIGN);
     }
 
     ~Central2D() {
@@ -164,16 +174,16 @@ private:
     const real dx, dy;         // Cell size in x/y
     const real cfl;            // Allowed CFL number
 
-    real *u_;            // Solution values
-    real *f_;            // Fluxes in x
-    real *g_;            // Fluxes in y
-    real *ux_;           // x differences of u
-    real *uy_;           // y differences of u
-    real *fx_;           // x differences of f
-    real *gy_;           // y differences of g
-    real *v_;            // Solution values at next step
+    DEF_ALIGN(Physics::BYTE_ALIGN) real *u_;            // Solution values
+    DEF_ALIGN(Physics::BYTE_ALIGN) real *f_;            // Fluxes in x
+    DEF_ALIGN(Physics::BYTE_ALIGN) real *g_;            // Fluxes in y
+    DEF_ALIGN(Physics::BYTE_ALIGN) real *ux_;           // x differences of u
+    DEF_ALIGN(Physics::BYTE_ALIGN) real *uy_;           // y differences of u
+    DEF_ALIGN(Physics::BYTE_ALIGN) real *fx_;           // x differences of f
+    DEF_ALIGN(Physics::BYTE_ALIGN) real *gy_;           // y differences of g
+    DEF_ALIGN(Physics::BYTE_ALIGN) real *v_;            // Solution values at next step
 
-    real *uh_copy;       // used in compute_step
+    DEF_ALIGN(UH_ALIGN) real *uh_copy;       // used in compute_step
 
     // Array accessor functions
 
@@ -259,10 +269,10 @@ void Central2D<Physics, Limiter>::apply_periodic()
             // u(ix,          iy) = uwrap(ix,          iy);
             // u(nx+nghost+ix,iy) = uwrap(nx+nghost+ix,iy);
 
-            real *u_xy        = u(ix, iy);
-            real *uwrap_xy    = uwrap(ix, iy);
-            real *u_ghost     = u(nx+nghost+ix,iy);
-            real *uwrap_ghost = uwrap(nx+nghost+ix,iy);
+            real *u_xy        = u(ix, iy);              USE_ALIGN(u_xy, UH_ALIGN);
+            real *uwrap_xy    = uwrap(ix, iy);          USE_ALIGN(uwrap_xy, UH_ALIGN);
+            real *u_ghost     = u(nx+nghost+ix,iy);     USE_ALIGN(u_ghost, UH_ALIGN);
+            real *uwrap_ghost = uwrap(nx+nghost+ix,iy); USE_ALIGN(uwrap_ghost, UH_ALIGN);
 
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
@@ -277,10 +287,10 @@ void Central2D<Physics, Limiter>::apply_periodic()
             // u(ix,          iy) = uwrap(ix,          iy);
             // u(ix,ny+nghost+iy) = uwrap(ix,ny+nghost+iy);
 
-            real *u_xy        = u(ix, iy);
-            real *uwrap_xy    = uwrap(ix, iy);
-            real *u_ghost     = u(ix,ny+nghost+iy);
-            real *uwrap_ghost = uwrap(ix,ny+nghost+iy);
+            real *u_xy        = u(ix, iy);              USE_ALIGN(u_xy, UH_ALIGN);
+            real *uwrap_xy    = uwrap(ix, iy);          USE_ALIGN(uwrap_xy, UH_ALIGN);
+            real *u_ghost     = u(ix,ny+nghost+iy);     USE_ALIGN(u_ghost, UH_ALIGN);
+            real *uwrap_ghost = uwrap(ix,ny+nghost+iy); USE_ALIGN(uwrap_ghost, UH_ALIGN);
 
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) {
