@@ -347,15 +347,47 @@ template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::limited_derivs()
 {
     for (int iy = 1; iy < ny_all-1; ++iy) {
+        #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
 
-            // x derivs
-            limdiff( ux(ix,iy), u(ix-1,iy), u(ix,iy), u(ix+1,iy) );
-            limdiff( fx(ix,iy), f(ix-1,iy), f(ix,iy), f(ix+1,iy) );
+            // // x derivs
+            // limdiff( ux(ix,iy), u(ix-1,iy), u(ix,iy), u(ix+1,iy) );
+            // limdiff( fx(ix,iy), f(ix-1,iy), f(ix,iy), f(ix+1,iy) );
 
-            // y derivs
-            limdiff( uy(ix,iy), u(ix,iy-1), u(ix,iy), u(ix,iy+1) );
-            limdiff( gy(ix,iy), g(ix,iy-1), g(ix,iy), g(ix,iy+1) );
+            // // y derivs
+            // limdiff( uy(ix,iy), u(ix,iy-1), u(ix,iy), u(ix,iy+1) );
+            // limdiff( gy(ix,iy), g(ix,iy-1), g(ix,iy), g(ix,iy+1) );
+            {
+                //
+                // x derivs
+                //
+                real *ux_x0_y0 = ux(ix, iy);  USE_ALIGN(ux_x0_y0, Physics::VEC_ALIGN);
+                real *u_xM1_y0 = u(ix-1, iy); USE_ALIGN(u_xM1_y0, Physics::VEC_ALIGN);
+                real *u_x0_y0  = u(ix, iy);   USE_ALIGN(u_x0_y0, Physics::VEC_ALIGN);
+                real *u_xP1_y0 = u(ix+1, iy); USE_ALIGN(u_xP1_y0, Physics::VEC_ALIGN);
+
+                real *fx_x0_y0 = fx(ix, iy);  USE_ALIGN(fx_x0_y0, Physics::VEC_ALIGN);
+                real *f_xM1_y0 = f(ix-1, iy); USE_ALIGN(f_xM1_y0, Physics::VEC_ALIGN);
+                real *f_x0_y0  = f(ix, iy);   USE_ALIGN(f_x0_y0, Physics::VEC_ALIGN);
+                real *f_xP1_y0 = f(ix+1, iy); USE_ALIGN(f_xP1_y0, Physics::VEC_ALIGN);
+
+                //
+                // y derivs
+                //
+                real *uy_x0_y0 = uy(ix, iy);  USE_ALIGN(uy_x0_y0, Physics::VEC_ALIGN);
+                real *u_x0_yM1 = u(ix, iy-1); USE_ALIGN(u_x0_yM1, Physics::VEC_ALIGN);
+                real *u_x0_yP1 = u(ix, iy+1); USE_ALIGN(u_x0_yP1, Physics::VEC_ALIGN);
+
+                real *gy_x0_y0 = gy(ix, iy);  USE_ALIGN(gy_x0_y0, Physics::VEC_ALIGN);
+                real *g_x0_yM1 = g(ix, iy-1); USE_ALIGN(g_x0_yM1, Physics::VEC_ALIGN);
+                real *g_x0_y0  = g(ix, iy);   USE_ALIGN(g_x0_y0, Physics::VEC_ALIGN);
+                real *g_x0_yP1 = g(ix, iy+1); USE_ALIGN(g_x0_yP1, Physics::VEC_ALIGN);
+
+                limdiff( ux_x0_y0, u_xM1_y0, u_x0_y0, u_xP1_y0 );
+                limdiff( fx_x0_y0, f_xM1_y0, f_x0_y0, f_xP1_y0 );
+                limdiff( uy_x0_y0, u_x0_yM1, u_x0_y0, u_x0_yP1 );
+                limdiff( gy_x0_y0, g_x0_yM1, g_x0_y0, g_x0_yP1 );
+            }
         }
     }
 }
