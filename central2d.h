@@ -401,7 +401,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 
     // Corrector (finish the step)
     #pragma simd
-    for (int iy = nghost-io; iy < ny+nghost-io; ++iy)
+    for (int iy = nghost-io; iy < ny+nghost-io; ++iy) {
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
 
             // #pragma unroll
@@ -425,37 +425,37 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
              *     u_x1_y1 <- u(ix+1, iy+1)
              */
             // The final result
-            real *v_ix_iy = v(ix, iy);       USE_ALIGN(v_ix_iy,  /*Physics::VEC_ALIGN*/UH_ALIGN);
+            real *v_ix_iy = v(ix, iy);       USE_ALIGN(v_ix_iy,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
 
             // grab u
-            real *u_x1_y0 = u(ix+1, iy  );   USE_ALIGN(u_x1_y0,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *u_x0_y0 = u(ix  , iy  );   USE_ALIGN(u_x0_y0,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *u_x0_y1 = u(ix  , iy+1);   USE_ALIGN(u_x0_y1,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *u_x1_y1 = u(ix+1, iy+1);   USE_ALIGN(u_x1_y1,  /*Physics::VEC_ALIGN*/UH_ALIGN);
+            real *u_x1_y0 = u(ix+1, iy  );   USE_ALIGN(u_x1_y0,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *u_x0_y0 = u(ix  , iy  );   USE_ALIGN(u_x0_y0,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *u_x0_y1 = u(ix  , iy+1);   USE_ALIGN(u_x0_y1,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *u_x1_y1 = u(ix+1, iy+1);   USE_ALIGN(u_x1_y1,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
 
             // grab ux
-            real *ux_x0_y0 = ux(ix  , iy  ); USE_ALIGN(ux_x0_y0, /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *ux_x1_y0 = ux(ix+1, iy  ); USE_ALIGN(ux_x1_y0, /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *ux_x0_y1 = ux(ix  , iy+1); USE_ALIGN(ux_x0_y1, /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *ux_x1_y1 = ux(ix+1, iy+1); USE_ALIGN(ux_x1_y1, /*Physics::VEC_ALIGN*/UH_ALIGN);
+            real *ux_x0_y0 = ux(ix  , iy  ); USE_ALIGN(ux_x0_y0, Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *ux_x1_y0 = ux(ix+1, iy  ); USE_ALIGN(ux_x1_y0, Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *ux_x0_y1 = ux(ix  , iy+1); USE_ALIGN(ux_x0_y1, Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *ux_x1_y1 = ux(ix+1, iy+1); USE_ALIGN(ux_x1_y1, Physics::BYTE_ALIGN /*UH_ALIGN*/ );
 
             // grab uy
-            real *uy_x0_y0 = uy(ix  , iy  ); USE_ALIGN(uy_x0_y0, /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *uy_x1_y0 = uy(ix+1, iy  ); USE_ALIGN(uy_x1_y0, /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *uy_x0_y1 = uy(ix  , iy+1); USE_ALIGN(uy_x0_y1, /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *uy_x1_y1 = uy(ix+1, iy+1); USE_ALIGN(uy_x1_y1, /*Physics::VEC_ALIGN*/UH_ALIGN);
+            real *uy_x0_y0 = uy(ix  , iy  ); USE_ALIGN(uy_x0_y0, Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *uy_x1_y0 = uy(ix+1, iy  ); USE_ALIGN(uy_x1_y0, Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *uy_x0_y1 = uy(ix  , iy+1); USE_ALIGN(uy_x0_y1, Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *uy_x1_y1 = uy(ix+1, iy+1); USE_ALIGN(uy_x1_y1, Physics::BYTE_ALIGN /*UH_ALIGN*/ );
 
             // grab f
-            real *f_x0_y0 = f(ix  , iy  );   USE_ALIGN(f_x0_y0,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *f_x1_y0 = f(ix+1, iy  );   USE_ALIGN(f_x1_y0,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *f_x0_y1 = f(ix  , iy+1);   USE_ALIGN(f_x0_y1,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *f_x1_y1 = f(ix+1, iy+1);   USE_ALIGN(f_x1_y1,  /*Physics::VEC_ALIGN*/UH_ALIGN);
+            real *f_x0_y0 = f(ix  , iy  );   USE_ALIGN(f_x0_y0,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *f_x1_y0 = f(ix+1, iy  );   USE_ALIGN(f_x1_y0,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *f_x0_y1 = f(ix  , iy+1);   USE_ALIGN(f_x0_y1,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *f_x1_y1 = f(ix+1, iy+1);   USE_ALIGN(f_x1_y1,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
 
             // grab g
-            real *g_x0_y0 = g(ix  , iy  );   USE_ALIGN(g_x0_y0,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *g_x1_y0 = g(ix+1, iy  );   USE_ALIGN(g_x1_y0,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *g_x0_y1 = g(ix  , iy+1);   USE_ALIGN(g_x0_y1,  /*Physics::VEC_ALIGN*/UH_ALIGN);
-            real *g_x1_y1 = g(ix+1, iy+1);   USE_ALIGN(g_x1_y1,  /*Physics::VEC_ALIGN*/UH_ALIGN);
+            real *g_x0_y0 = g(ix  , iy  );   USE_ALIGN(g_x0_y0,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *g_x1_y0 = g(ix+1, iy  );   USE_ALIGN(g_x1_y0,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *g_x0_y1 = g(ix  , iy+1);   USE_ALIGN(g_x0_y1,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
+            real *g_x1_y1 = g(ix+1, iy+1);   USE_ALIGN(g_x1_y1,  Physics::BYTE_ALIGN /*UH_ALIGN*/ );
 
             // #pragma simd
             for(int m = 0; m < Physics::vec_size; ++m) {
@@ -472,6 +472,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
                                 g_x1_y1[m]  - g_x1_y0[m]  );                    
             }
         }
+    }
 
     // Copy from v storage back to main grid
     for (int j = nghost; j < ny+nghost; ++j){
