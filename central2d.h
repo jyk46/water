@@ -416,7 +416,13 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
-            real *uh = u(ix,iy);
+            real *uh = u(ix,iy);   USE_ALIGN(uh, Physics::VEC_ALIGN);
+            
+            real *fx = fx(ix, iy); USE_ALIGN(fx, Physics::VEC_ALIGN);
+            real *gy = gy(ix, iy); USE_ALIGN(gy, Physics::VEC_ALIGN);
+
+            real *f  = f(ix, iy);  USE_ALIGN(f,  Physics::VEC_ALIGN);
+            real *g  = g(ix, iy);  USE_ALIGN(g,  Physics::VEC_ALIGN);
 
             // be careful not to modify u!!!            
             #pragma unroll
@@ -424,10 +430,10 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             
             #pragma unroll
             for (int m = 0; m < Physics::vec_size; ++m) {
-                uh_copy[m] -= dtcdx2 * fx(ix,iy)[m];
-                uh_copy[m] -= dtcdy2 * gy(ix,iy)[m];
+                uh_copy[m] -= dtcdx2 * fx[m];//fx(ix,iy)[m];
+                uh_copy[m] -= dtcdy2 * gy[m];//gy(ix,iy)[m];
             }
-            Physics::flux(f(ix,iy), g(ix,iy), uh_copy);
+            Physics::flux(/*f(ix,iy)*/f, /*g(ix,iy)*/g, uh_copy);
         }
     }
 
