@@ -353,7 +353,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     real dtcdx2 = 0.5 * dt / dx;
     real dtcdy2 = 0.5 * dt / dy;
 
-    real *uh_copy = (real *)malloc(sizeof(real)*Physics::vec_size);//, sizeof(real)*Physics::vec_size);
+    real *uh_copy = (real *)_mm_malloc(sizeof(real)*Physics::vec_size, 12);//, sizeof(real)*Physics::vec_size);
 
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy)
@@ -372,8 +372,8 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             Physics::flux(f(ix,iy), g(ix,iy), uh_copy);
         }
 
-    free(uh_copy);
-    // _mm_free(uh_copy);
+    // free(uh_copy);
+    _mm_free(uh_copy);
 
     // Corrector (finish the step)
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy)
