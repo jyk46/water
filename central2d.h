@@ -270,7 +270,8 @@ template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::apply_periodic()
 {
     // Copy data between right and left boundaries
-    for (int iy = 0; iy < ny_all; ++iy)
+    for (int iy = 0; iy < ny_all; ++iy) {
+        #pragma ivdep
         for (int ix = 0; ix < nghost; ++ix) {
             // u(ix,          iy) = uwrap(ix,          iy);
             // u(nx+nghost+ix,iy) = uwrap(nx+nghost+ix,iy);
@@ -286,9 +287,11 @@ void Central2D<Physics, Limiter>::apply_periodic()
                 u_ghost[m] = uwrap_ghost[m];
             }
         }
+    }
 
     // Copy data between top and bottom boundaries
-    for (int ix = 0; ix < nx_all; ++ix)
+    for (int ix = 0; ix < nx_all; ++ix) {
+        #pragma ivdep
         for (int iy = 0; iy < nghost; ++iy) {
             // u(ix,          iy) = uwrap(ix,          iy);
             // u(ix,ny+nghost+iy) = uwrap(ix,ny+nghost+iy);
@@ -304,6 +307,7 @@ void Central2D<Physics, Limiter>::apply_periodic()
                 u_ghost[m] = uwrap_ghost[m];
             }
         }
+    }
 }
 
 
