@@ -158,11 +158,11 @@ public:
     int ysize() const { return ny; }
     
     // Read / write elements of simulation state
-    real*       operator()(int i, int j) {
+    inline real*       operator()(int i, int j) {
         return &u_[offset(i+nghost,j+nghost)];
     }
     
-    const real* operator()(int i, int j) const {
+    inline const real* operator()(int i, int j) const {
         return &u_[offset(i+nghost,j+nghost)];
     }
     
@@ -187,29 +187,34 @@ private:
 
     // Array accessor functions
 
-    int offset(int ix, int iy) const { return (iy*nx_all+ix)*Physics::vec_size; }
+    inline int offset(int ix, int iy) const { return (iy*nx_all+ix)*Physics::vec_size; }
 
-    real* u(int ix, int iy)    { return &u_[offset(ix,iy)]; }
-    real* v(int ix, int iy)    { return &v_[offset(ix,iy)]; }
-    real* f(int ix, int iy)    { return &f_[offset(ix,iy)]; }
-    real* g(int ix, int iy)    { return &g_[offset(ix,iy)]; }
+    inline real* u(int ix, int iy)    { return &u_[offset(ix,iy)]; }
+    inline real* v(int ix, int iy)    { return &v_[offset(ix,iy)]; }
+    inline real* f(int ix, int iy)    { return &f_[offset(ix,iy)]; }
+    inline real* g(int ix, int iy)    { return &g_[offset(ix,iy)]; }
 
-    real* ux(int ix, int iy)   { return &ux_[offset(ix,iy)]; }
-    real* uy(int ix, int iy)   { return &uy_[offset(ix,iy)]; }
-    real* fx(int ix, int iy)   { return &fx_[offset(ix,iy)]; }
-    real* gy(int ix, int iy)   { return &gy_[offset(ix,iy)]; }
+    inline real* ux(int ix, int iy)   { return &ux_[offset(ix,iy)]; }
+    inline real* uy(int ix, int iy)   { return &uy_[offset(ix,iy)]; }
+    inline real* fx(int ix, int iy)   { return &fx_[offset(ix,iy)]; }
+    inline real* gy(int ix, int iy)   { return &gy_[offset(ix,iy)]; }
 
     // Wrapped accessor (periodic BC)
-    int ioffset(int ix, int iy) {
+    inline int ioffset(int ix, int iy) {
         return offset( (ix+nx-nghost) % nx + nghost,
                        (iy+ny-nghost) % ny + nghost );
     }
 
-    real* uwrap(int ix, int iy)  { return &u_[ioffset(ix,iy)]; }
+    inline real* uwrap(int ix, int iy)  { return &u_[ioffset(ix,iy)]; }
 
     // Apply limiter to all components in a vector
-    static void limdiff(real *du, const real *um, const real *u0, const real *up) {
-        #pragma unroll
+    static inline void limdiff(real *du, const real *um, const real *u0, const real *up) {
+        USE_ALIGN(du, Physics::VEC_ALIGN);
+        USE_ALIGN(um, Physics::VEC_ALIGN);
+        USE_ALIGN(u0, Physics::VEC_ALIGN);
+        USE_ALIGN(up, Physics::VEC_ALIGN);
+
+        #pragma simd
         for (int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
@@ -317,7 +322,7 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
     using namespace std;
     real cx = 1.0e-15;
     real cy = 1.0e-15;
-    for (int iy = 0; iy < ny_all; ++iy)
+    for (int iy = 0; iy < ny_all; ++iy) {
         for (int ix = 0; ix < nx_all; ++ix) {
             real cell_cx, cell_cy;
             Physics::flux(f(ix,iy), g(ix,iy), u(ix,iy));
@@ -325,6 +330,7 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
             cx = max(cx, cell_cx);
             cy = max(cy, cell_cy);
         }
+    }
     cx_ = cx;
     cy_ = cy;
 }
@@ -475,7 +481,6 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 
     // Copy from v storage back to main grid
     for (int j = nghost; j < ny+nghost; ++j){
-        #pragma ivdep
         for (int i = nghost; i < nx+nghost; ++i){
             // u(i,j) = v(i-io,j-io);
             real *u_ij = u(i, j);

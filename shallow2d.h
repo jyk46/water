@@ -58,39 +58,60 @@
  * to optimize for us).
  */
 
+#ifdef __INTEL_COMPILER
+    #define DEF_ALIGN(x) __declspec(align((x)))
+    #define USE_ALIGN(var, align) __assume_aligned((var), (align));
+#else // GCC
+    #define DEF_ALIGN(x) __attribute__ ((aligned((x))))
+    #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
+#endif
+
 struct Shallow2D {
 
     // vec size for loop unrolling innermost loops in solver
     static constexpr int vec_size = 4;
 
     static constexpr int BYTE_ALIGN = 64;//4096;
+    static constexpr int VEC_ALIGN  = 16;// lolz
 
     // Type parameters for solver
     typedef float real;
 
     // Gravitational force (compile time constant)
-    static constexpr real g = 9.8;
+    static constexpr real g = 9.8f;
 
     // Compute shallow water fluxes F(U), G(U)
-    static void flux(real *FU, real *GU, const real *U) {
-        real h = U[0], hu = U[1], hv = U[2];
+    static inline void flux(real *FU, real *GU, const real *U) {
+        USE_ALIGN(FU, VEC_ALIGN);
+        USE_ALIGN(GU, VEC_ALIGN);
+        USE_ALIGN(U , VEC_ALIGN);
 
-        FU[0] = hu;
-        FU[1] = hu*hu/h + (0.5*g)*h*h;
-        FU[2] = hu*hv/h;
+        #pragma simd
+        {
+            real h = U[0], hu = U[1], hv = U[2];
 
-        GU[0] = hv;
-        GU[1] = hu*hv/h;
-        GU[2] = hv*hv/h + (0.5*g)*h*h;
+            FU[0] = hu;
+            FU[1] = hu*hu/h + (0.5f*g)*h*h;
+            FU[2] = hu*hv/h;
+
+            GU[0] = hv;
+            GU[1] = hu*hv/h;
+            GU[2] = hv*hv/h + (0.5f*g)*h*h;
+        }
     }
 
     // Compute shallow water wave speed
-    static void wave_speed(real& cx, real& cy, const real *U) {
+    static inline void wave_speed(real& cx, real& cy, const real *U) {
         using namespace std;
-        real h = U[0], hu = U[1], hv = U[2];
-        real root_gh = sqrt(g * h);  // NB: Don't let h go negative!
-        cx = abs(hu/h) + root_gh;
-        cy = abs(hv/h) + root_gh;
+        USE_ALIGN(U, VEC_ALIGN);
+
+        #pragma simd
+        {
+            real h = U[0], hu = U[1], hv = U[2];
+            real root_gh = sqrt(g * h);  // NB: Don't let h go negative!
+            cx = fabs(hu/h) + root_gh;
+            cy = fabs(hv/h) + root_gh;
+        }
     }
 };
 
