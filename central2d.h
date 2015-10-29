@@ -208,12 +208,14 @@ private:
     inline real* uwrap(int ix, int iy)  { return &u_[ioffset(ix,iy)]; }
 
     // Apply limiter to all components in a vector
+    #pragma omp declare simd
     static inline void limdiff(real *du, const real *um, const real *u0, const real *up) {
         USE_ALIGN(du, Physics::VEC_ALIGN);
         USE_ALIGN(um, Physics::VEC_ALIGN);
         USE_ALIGN(u0, Physics::VEC_ALIGN);
         USE_ALIGN(up, Physics::VEC_ALIGN);
 
+        #pragma unroll
         for (int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
@@ -342,11 +344,12 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
  * derivatives of the fluxes and the solution values at each cell.
  * In order to maintain stability, we apply a limiter here.
  */
-#pragma omp declare simd
+
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::limited_derivs()
 {
     for (int iy = 1; iy < ny_all-1; ++iy) {
+        #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
 
             // // x derivs
