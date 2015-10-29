@@ -400,8 +400,8 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
         }
 
     // Corrector (finish the step)
-    #pragma simd
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy) {
+        #pragma simd
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
 
             // #pragma unroll
