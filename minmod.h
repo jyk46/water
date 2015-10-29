@@ -67,7 +67,7 @@ struct MinMod {
     // __declspec(target(mic))
     // #endif
     // static inline real xmin(real a, real b) {
-    static inline real xmin2s(real s, real a, real b) {
+    static inline real xmin2s(const real s, const real a, const real b) {
         // using namespace std;
         // return ((copysign((real) 0.5f, a) +
         //          copysign((real) 0.5f, b)) *
@@ -85,7 +85,7 @@ struct MinMod {
     // #if defined _PARALLEL_DEVICE
     // __declspec(target(mic))
     // #endif
-    static real limdiff(real um, real u0, real up) {
+    static inline real limdiff(const real um, const real u0, const real up) {
         // real du1 = u0-um;         // Difference to left
         // real du2 = up-u0;         // Difference to right
         // real duc = 0.5f*(du1+du2); // Centered difference
