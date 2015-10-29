@@ -106,15 +106,32 @@ public:
         nx_all(nx + 2*nghost),
         ny_all(ny + 2*nghost),
         dx(w/nx), dy(h/ny),
-        cfl(cfl), 
-        u_ (nx_all * ny_all * Physics::vec_size),
-        f_ (nx_all * ny_all * Physics::vec_size),
-        g_ (nx_all * ny_all * Physics::vec_size),
-        ux_(nx_all * ny_all * Physics::vec_size),
-        uy_(nx_all * ny_all * Physics::vec_size),
-        fx_(nx_all * ny_all * Physics::vec_size),
-        gy_(nx_all * ny_all * Physics::vec_size),
-        v_ (nx_all * ny_all * Physics::vec_size) {}
+        cfl(cfl) {
+
+        u_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+        f_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+        g_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+        ux_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+        uy_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+        fx_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+        gy_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+        v_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+
+        // used in compute_step
+        uh_copy = (real *)_mm_malloc(sizeof(real)*Physics::vec_size, 16);
+    }
+
+    ~Central2D() {
+        if(u_ ) _mm_free(u_ );
+        if(f_ ) _mm_free(f_ );
+        if(g_ ) _mm_free(g_ );
+        if(ux_) _mm_free(ux_);
+        if(uy_) _mm_free(uy_);
+        if(fx_) _mm_free(fx_);
+        if(gy_) _mm_free(gy_);
+        if(v_ ) _mm_free(v_ );
+        if(uh_copy) _mm_free(uh_copy);
+    }
 
     // Advance from time 0 to time tfinal
     void run(real tfinal);
@@ -147,14 +164,16 @@ private:
     const real dx, dy;         // Cell size in x/y
     const real cfl;            // Allowed CFL number
 
-    std::vector<real> u_;            // Solution values
-    std::vector<real> f_;            // Fluxes in x
-    std::vector<real> g_;            // Fluxes in y
-    std::vector<real> ux_;           // x differences of u
-    std::vector<real> uy_;           // y differences of u
-    std::vector<real> fx_;           // x differences of f
-    std::vector<real> gy_;           // y differences of g
-    std::vector<real> v_;            // Solution values at next step
+    real *u_;            // Solution values
+    real *f_;            // Fluxes in x
+    real *g_;            // Fluxes in y
+    real *ux_;           // x differences of u
+    real *uy_;           // y differences of u
+    real *fx_;           // x differences of f
+    real *gy_;           // y differences of g
+    real *v_;            // Solution values at next step
+
+    real *uh_copy;       // used in compute_step
 
     // Array accessor functions
 
@@ -353,8 +372,6 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     real dtcdx2 = 0.5 * dt / dx;
     real dtcdy2 = 0.5 * dt / dy;
 
-    real *uh_copy = (real *)_mm_malloc(sizeof(real)*Physics::vec_size, 16);//, sizeof(real)*Physics::vec_size);
-
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy)
         for (int ix = 1; ix < nx_all-1; ++ix) {
@@ -371,9 +388,6 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             }
             Physics::flux(f(ix,iy), g(ix,iy), uh_copy);
         }
-
-    // free(uh_copy);
-    _mm_free(uh_copy);
 
     // Corrector (finish the step)
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy)
