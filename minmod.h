@@ -62,9 +62,7 @@ struct MinMod {
     static constexpr real theta = 2.0f;
 
     // Branch-free computation of minmod of two numbers
-    #ifdef __INTEL_COMPILER
-    __declspec(vector)
-    #endif
+    #pragma omp declare simd
     static inline real xmin(real a, real b) {
         using namespace std;
         return ((copysign((real) 0.5f, a) +
@@ -73,9 +71,7 @@ struct MinMod {
     }
 
     // Limited combined slope estimate
-    #ifdef __INTEL_COMPILER
-    __declspec(vector)
-    #endif
+    #pragma omp declare simd
     static real limdiff(real um, real u0, real up) {
         real du1 = u0-um;         // Difference to left
         real du2 = up-u0;         // Difference to right
