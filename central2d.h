@@ -179,7 +179,8 @@ private:
 
     // Apply limiter to all components in a vector
     static void limdiff(vec& du, const vec& um, const vec& u0, const vec& up) {
-        for (int m = 0; m < du.size(); ++m)
+        #pragma unroll
+        for (int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
 
@@ -333,7 +334,9 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     for (int iy = 1; iy < ny_all-1; ++iy)
         for (int ix = 1; ix < nx_all-1; ++ix) {
             vec uh = u(ix,iy);
-            for (int m = 0; m < uh.size(); ++m) {
+            
+            #pragma unroll
+            for (int m = 0; m < Physics::vec_size; ++m) {
                 uh[m] -= dtcdx2 * fx(ix,iy)[m];
                 uh[m] -= dtcdy2 * gy(ix,iy)[m];
             }
@@ -343,7 +346,9 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     // Corrector (finish the step)
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy)
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
-            for (int m = 0; m < v(ix,iy).size(); ++m) {
+
+            #pragma unroll
+            for (int m = 0; m < Physics::vec_size; ++m) {
                 v(ix,iy)[m] =
                     0.2500 * ( u(ix,  iy)[m] + u(ix+1,iy  )[m] +
                                u(ix,iy+1)[m] + u(ix+1,iy+1)[m] ) -
