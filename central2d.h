@@ -351,12 +351,12 @@ void Central2D<Physics, Limiter>::limited_derivs()
             //
             real *ux_x0_y0 = ux(ix, iy);  USE_ALIGN(ux_x0_y0, Physics::VEC_ALIGN);
             real *u_xM1_y0 = u(ix-1, iy); USE_ALIGN(u_xM1_y0, Physics::VEC_ALIGN);
-            real *u_x0_y0  = u(ix, iy);   USE_ALIGN(u_x0_y0, Physics::VEC_ALIGN);
+            real *u_x0_y0  = u(ix, iy);   USE_ALIGN(u_x0_y0,  Physics::VEC_ALIGN);
             real *u_xP1_y0 = u(ix+1, iy); USE_ALIGN(u_xP1_y0, Physics::VEC_ALIGN);
 
             real *fx_x0_y0 = fx(ix, iy);  USE_ALIGN(fx_x0_y0, Physics::VEC_ALIGN);
             real *f_xM1_y0 = f(ix-1, iy); USE_ALIGN(f_xM1_y0, Physics::VEC_ALIGN);
-            real *f_x0_y0  = f(ix, iy);   USE_ALIGN(f_x0_y0, Physics::VEC_ALIGN);
+            real *f_x0_y0  = f(ix, iy);   USE_ALIGN(f_x0_y0,  Physics::VEC_ALIGN);
             real *f_xP1_y0 = f(ix+1, iy); USE_ALIGN(f_xP1_y0, Physics::VEC_ALIGN);
 
             //
@@ -368,7 +368,7 @@ void Central2D<Physics, Limiter>::limited_derivs()
 
             real *gy_x0_y0 = gy(ix, iy);  USE_ALIGN(gy_x0_y0, Physics::VEC_ALIGN);
             real *g_x0_yM1 = g(ix, iy-1); USE_ALIGN(g_x0_yM1, Physics::VEC_ALIGN);
-            real *g_x0_y0  = g(ix, iy);   USE_ALIGN(g_x0_y0, Physics::VEC_ALIGN);
+            real *g_x0_y0  = g(ix, iy);   USE_ALIGN(g_x0_y0,  Physics::VEC_ALIGN);
             real *g_x0_yP1 = g(ix, iy+1); USE_ALIGN(g_x0_yP1, Physics::VEC_ALIGN);
 
             limdiff( ux_x0_y0, u_xM1_y0, u_x0_y0, u_xP1_y0 );
@@ -416,13 +416,12 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
-            real *uh = u(ix,iy);   USE_ALIGN(uh, Physics::VEC_ALIGN);
-            
-            real *fx = fx(ix, iy); USE_ALIGN(fx, Physics::VEC_ALIGN);
-            real *gy = gy(ix, iy); USE_ALIGN(gy, Physics::VEC_ALIGN);
-
-            real *f  = f(ix, iy);  USE_ALIGN(f,  Physics::VEC_ALIGN);
-            real *g  = g(ix, iy);  USE_ALIGN(g,  Physics::VEC_ALIGN);
+            // grab the necessary values
+            real *uh    = u(ix,iy);   USE_ALIGN(uh, Physics::VEC_ALIGN);
+            real *fx_xy = fx(ix, iy); USE_ALIGN(fx, Physics::VEC_ALIGN);
+            real *gy_xy = gy(ix, iy); USE_ALIGN(gy, Physics::VEC_ALIGN);
+            real *f_xy  = f(ix, iy);  USE_ALIGN(f,  Physics::VEC_ALIGN);
+            real *g_xy  = g(ix, iy);  USE_ALIGN(g,  Physics::VEC_ALIGN);
 
             // be careful not to modify u!!!            
             #pragma unroll
@@ -430,10 +429,10 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             
             #pragma unroll
             for (int m = 0; m < Physics::vec_size; ++m) {
-                uh_copy[m] -= dtcdx2 * fx[m];//fx(ix,iy)[m];
-                uh_copy[m] -= dtcdy2 * gy[m];//gy(ix,iy)[m];
+                uh_copy[m] -= dtcdx2 * fx_xy[m];//fx(ix,iy)[m];
+                uh_copy[m] -= dtcdy2 * gy_xy[m];//gy(ix,iy)[m];
             }
-            Physics::flux(/*f(ix,iy)*/f, /*g(ix,iy)*/g, uh_copy);
+            Physics::flux(/*f(ix,iy)*/f_xy, /*g(ix,iy)*/g_xy, uh_copy);
         }
     }
 
