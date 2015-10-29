@@ -347,7 +347,6 @@ template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::limited_derivs()
 {
     for (int iy = 1; iy < ny_all-1; ++iy) {
-        #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
 
             // x derivs
