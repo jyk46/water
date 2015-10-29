@@ -475,12 +475,13 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 
     // Copy from v storage back to main grid
     for (int j = nghost; j < ny+nghost; ++j){
+        #pragma ivdep
         for (int i = nghost; i < nx+nghost; ++i){
             // u(i,j) = v(i-io,j-io);
             real *u_ij = u(i, j);
             real *v_ij_io = v(i-io, j-io);
 
-            #pragma unroll ivdep
+            #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) u_ij[m] = v_ij_io[m];
         }
     }
