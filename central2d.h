@@ -342,12 +342,11 @@ void Central2D<Physics, Limiter>::compute_fg_speeds(real& cx_, real& cy_)
  * derivatives of the fluxes and the solution values at each cell.
  * In order to maintain stability, we apply a limiter here.
  */
-
+#pragma omp declare simd
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::limited_derivs()
 {
     for (int iy = 1; iy < ny_all-1; ++iy) {
-        #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
 
             // // x derivs
