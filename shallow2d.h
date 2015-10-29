@@ -86,18 +86,15 @@ struct Shallow2D {
         USE_ALIGN(GU, VEC_ALIGN);
         USE_ALIGN(U , VEC_ALIGN);
 
-        #pragma simd
-        {
-            real h = U[0], hu = U[1], hv = U[2];
+        real h = U[0], hu = U[1], hv = U[2];
 
-            FU[0] = hu;
-            FU[1] = hu*hu/h + (0.5f*g)*h*h;
-            FU[2] = hu*hv/h;
+        FU[0] = hu;
+        FU[1] = hu*hu/h + (0.5f*g)*h*h;
+        FU[2] = hu*hv/h;
 
-            GU[0] = hv;
-            GU[1] = hu*hv/h;
-            GU[2] = hv*hv/h + (0.5f*g)*h*h;
-        }
+        GU[0] = hv;
+        GU[1] = hu*hv/h;
+        GU[2] = hv*hv/h + (0.5f*g)*h*h;
     }
 
     // Compute shallow water wave speed
@@ -105,13 +102,10 @@ struct Shallow2D {
         using namespace std;
         USE_ALIGN(U, VEC_ALIGN);
 
-        #pragma simd
-        {
-            real h = U[0], hu = U[1], hv = U[2];
-            real root_gh = sqrt(g * h);  // NB: Don't let h go negative!
-            cx = fabs(hu/h) + root_gh;
-            cy = fabs(hv/h) + root_gh;
-        }
+        real h = U[0], hu = U[1], hv = U[2];
+        real root_gh = sqrt(g * h);  // NB: Don't let h go negative!
+        cx = fabs(hu/h) + root_gh;
+        cy = fabs(hv/h) + root_gh;
     }
 };
 
