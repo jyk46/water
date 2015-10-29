@@ -400,6 +400,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
         }
 
     // Corrector (finish the step)
+    #pragma simd
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy)
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
 
@@ -456,7 +457,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             real *g_x0_y1 = g(ix  , iy+1);   USE_ALIGN(g_x0_y1,  /*Physics::VEC_ALIGN*/UH_ALIGN);
             real *g_x1_y1 = g(ix+1, iy+1);   USE_ALIGN(g_x1_y1,  /*Physics::VEC_ALIGN*/UH_ALIGN);
 
-            #pragma simd
+            // #pragma simd
             for(int m = 0; m < Physics::vec_size; ++m) {
                 v_ix_iy[m] =
                     0.2500f * ( u_x0_y0[m]  + u_x1_y0[m]    +
