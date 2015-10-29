@@ -89,6 +89,8 @@ void wave(Sim::vec& u, double x, double y)
 
 int main(int argc, char** argv)
 {
+    double start_time = omp_get_wtime();
+
     std::string fname = "waves.out";
     std::string ic = "dam_break";
     int    nx = 200;
@@ -155,4 +157,8 @@ int main(int argc, char** argv)
         sim.solution_check();
         viz.write_frame();
     }
+
+    double end_time = omp_get_wtime();
+    printf("\n#\n# Size: %d\n", nx);
+    printf("# Total Time: %.16g seconds\n#\n", end_time-start_time);
 }
