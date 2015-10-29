@@ -408,7 +408,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     real dtcdx2 = 0.5f * dt / dx;
     real dtcdy2 = 0.5f * dt / dy;
 
-    USE_ALIGN(uh_copy, Physics::VEC_ALIGN);
+    USE_ALIGN(uh_copy, /*Physics::VEC_ALIGN*/ Physics::BYTE_ALIGN );
 
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy) {
@@ -417,11 +417,11 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
             // grab the necessary values
-            real *uh    = u(ix,iy);   USE_ALIGN(uh,    Physics::VEC_ALIGN);
-            real *fx_xy = fx(ix, iy); USE_ALIGN(fx_xy, Physics::VEC_ALIGN);
-            real *gy_xy = gy(ix, iy); USE_ALIGN(gy_xy, Physics::VEC_ALIGN);
-            real *f_xy  = f(ix, iy);  USE_ALIGN(f_xy,  Physics::VEC_ALIGN);
-            real *g_xy  = g(ix, iy);  USE_ALIGN(g_xy,  Physics::VEC_ALIGN);
+            real *uh    = u(ix,iy);   USE_ALIGN(uh,    /*Physics::VEC_ALIGN*/ Physics::BYTE_ALIGN );
+            real *fx_xy = fx(ix, iy); USE_ALIGN(fx_xy, /*Physics::VEC_ALIGN*/ Physics::BYTE_ALIGN );
+            real *gy_xy = gy(ix, iy); USE_ALIGN(gy_xy, /*Physics::VEC_ALIGN*/ Physics::BYTE_ALIGN );
+            real *f_xy  = f(ix, iy);  USE_ALIGN(f_xy,  /*Physics::VEC_ALIGN*/ Physics::BYTE_ALIGN );
+            real *g_xy  = g(ix, iy);  USE_ALIGN(g_xy,  /*Physics::VEC_ALIGN*/ Physics::BYTE_ALIGN );
 
             // be careful not to modify u!!!            
             #pragma unroll
