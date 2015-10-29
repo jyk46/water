@@ -417,11 +417,11 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
             // grab the necessary values
-            real *uh    = u(ix,iy);   USE_ALIGN(uh, Physics::VEC_ALIGN);
-            real *fx_xy = fx(ix, iy); USE_ALIGN(fx, Physics::VEC_ALIGN);
-            real *gy_xy = gy(ix, iy); USE_ALIGN(gy, Physics::VEC_ALIGN);
-            real *f_xy  = f(ix, iy);  USE_ALIGN(f,  Physics::VEC_ALIGN);
-            real *g_xy  = g(ix, iy);  USE_ALIGN(g,  Physics::VEC_ALIGN);
+            real *uh    = u(ix,iy);   USE_ALIGN(uh,    Physics::VEC_ALIGN);
+            real *fx_xy = fx(ix, iy); USE_ALIGN(fx_xy, Physics::VEC_ALIGN);
+            real *gy_xy = gy(ix, iy); USE_ALIGN(gy_xy, Physics::VEC_ALIGN);
+            real *f_xy  = f(ix, iy);  USE_ALIGN(f_xy,  Physics::VEC_ALIGN);
+            real *g_xy  = g(ix, iy);  USE_ALIGN(g_xy,  Physics::VEC_ALIGN);
 
             // be careful not to modify u!!!            
             #pragma unroll
