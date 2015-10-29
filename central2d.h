@@ -215,7 +215,7 @@ private:
         USE_ALIGN(u0, Physics::VEC_ALIGN);
         USE_ALIGN(up, Physics::VEC_ALIGN);
 
-        #pragma unroll
+        #pragma ivdep
         for (int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
