@@ -61,9 +61,9 @@
 struct Shallow2D {
 
     // vec size for loop unrolling innermost loops in solver
-    static constexpr int vec_size = 3;
+    static constexpr int vec_size = 4;
 
-    static constexpr int BYTE_ALIGN = 4096;
+    static constexpr int BYTE_ALIGN = 64;//4096;
 
     // Type parameters for solver
     typedef float real;
