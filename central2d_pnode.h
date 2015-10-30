@@ -108,6 +108,9 @@
     #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
 #endif
 
+// convenience
+#define LOC locals_[tid]
+
 template <class Physics, class Limiter>
 class Central2D {
 public:
@@ -156,8 +159,7 @@ public:
                 int nx_local = (i == nxblocks - 1) ? nx_per_block_padded - nx_overhang
                              :                       nx_per_block_padded;
                 locals_.emplace_back(
-                            // std::unique_ptr<LocalState>(
-                        std::shared_ptr<LocalState>(
+                            std::unique_ptr<LocalState>(
                                 new LocalState(nx_local, ny_local)
                             )
                         );
@@ -267,8 +269,7 @@ private:
     DEF_ALIGN(Physics::BYTE_ALIGN) real *u_;
 
     // Local state (per-thread)
-    // std::vector<std::unique_ptr<LocalState>> locals_;
-    std::vector<std::shared_ptr<LocalState>> locals_;
+    std::vector<std::unique_ptr<LocalState>> locals_;
 
     // Array accessor function
 
@@ -431,17 +432,16 @@ void Central2D<Physics, Limiter>::compute_wave_speeds(real& cx_, real& cy_)
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::compute_flux(int tid)
 {
-    auto loc = locals_[tid];
-    int ny_per_block = loc->get_nx();//locals_[tid]->get_ny();
-    int nx_per_block = loc->get_ny();//locals_[tid]->get_nx();
+    int ny_per_block = LOC->get_nx();//locals_[tid]->get_ny();
+    int nx_per_block = LOC->get_ny();//locals_[tid]->get_nx();
 
     for (int iy = 0; iy < ny_per_block; ++iy) {
         #pragma ivdep
         for (int ix = 0; ix < nx_per_block; ++ix) {
             // gather necessary data
-            real *f_xy = loc->f(ix, iy); USE_ALIGN(f_xy, Physics::VEC_ALIGN);
-            real *g_xy = loc->g(ix, iy); USE_ALIGN(g_xy, Physics::VEC_ALIGN);
-            real *u_xy = loc->u(ix, iy); USE_ALIGN(u_xy, Physics::VEC_ALIGN);
+            real *f_xy = LOC->f(ix, iy); USE_ALIGN(f_xy, Physics::VEC_ALIGN);
+            real *g_xy = LOC->g(ix, iy); USE_ALIGN(g_xy, Physics::VEC_ALIGN);
+            real *u_xy = LOC->u(ix, iy); USE_ALIGN(u_xy, Physics::VEC_ALIGN);
 
             Physics::flux(f_xy, g_xy, u_xy);
 
@@ -463,9 +463,8 @@ void Central2D<Physics, Limiter>::compute_flux(int tid)
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::limited_derivs(int tid)
 {
-    auto loc = locals_[tid];
-    int ny_per_block = loc->get_ny();// locals_[tid]->get_ny();
-    int nx_per_block = loc->get_nx();// locals_[tid]->get_nx();
+    int ny_per_block = LOC->get_ny();// locals_[tid]->get_ny();
+    int nx_per_block = LOC->get_nx();// locals_[tid]->get_nx();
 
     for (int iy = 1; iy < ny_per_block-1; ++iy) {
         for (int ix = 1; ix < nx_per_block-1; ++ix) {
@@ -473,27 +472,27 @@ void Central2D<Physics, Limiter>::limited_derivs(int tid)
             //
             // x derivs
             //
-            real *ux_x0_y0 = loc->ux(ix, iy);  USE_ALIGN(ux_x0_y0, Physics::VEC_ALIGN);
-            real *u_xM1_y0 = loc->u(ix-1, iy); USE_ALIGN(u_xM1_y0, Physics::VEC_ALIGN);
-            real *u_x0_y0  = loc->u(ix, iy);   USE_ALIGN(u_x0_y0,  Physics::VEC_ALIGN);
-            real *u_xP1_y0 = loc->u(ix+1, iy); USE_ALIGN(u_xP1_y0, Physics::VEC_ALIGN);
+            real *ux_x0_y0 = LOC->ux(ix, iy);  USE_ALIGN(ux_x0_y0, Physics::VEC_ALIGN);
+            real *u_xM1_y0 = LOC->u(ix-1, iy); USE_ALIGN(u_xM1_y0, Physics::VEC_ALIGN);
+            real *u_x0_y0  = LOC->u(ix, iy);   USE_ALIGN(u_x0_y0,  Physics::VEC_ALIGN);
+            real *u_xP1_y0 = LOC->u(ix+1, iy); USE_ALIGN(u_xP1_y0, Physics::VEC_ALIGN);
 
-            real *fx_x0_y0 = loc->fx(ix, iy);  USE_ALIGN(fx_x0_y0, Physics::VEC_ALIGN);
-            real *f_xM1_y0 = loc->f(ix-1, iy); USE_ALIGN(f_xM1_y0, Physics::VEC_ALIGN);
-            real *f_x0_y0  = loc->f(ix, iy);   USE_ALIGN(f_x0_y0,  Physics::VEC_ALIGN);
-            real *f_xP1_y0 = loc->f(ix+1, iy); USE_ALIGN(f_xP1_y0, Physics::VEC_ALIGN);
+            real *fx_x0_y0 = LOC->fx(ix, iy);  USE_ALIGN(fx_x0_y0, Physics::VEC_ALIGN);
+            real *f_xM1_y0 = LOC->f(ix-1, iy); USE_ALIGN(f_xM1_y0, Physics::VEC_ALIGN);
+            real *f_x0_y0  = LOC->f(ix, iy);   USE_ALIGN(f_x0_y0,  Physics::VEC_ALIGN);
+            real *f_xP1_y0 = LOC->f(ix+1, iy); USE_ALIGN(f_xP1_y0, Physics::VEC_ALIGN);
 
             //
             // y derivs
             //
-            real *uy_x0_y0 = loc->uy(ix, iy);  USE_ALIGN(uy_x0_y0, Physics::VEC_ALIGN);
-            real *u_x0_yM1 = loc->u(ix, iy-1); USE_ALIGN(u_x0_yM1, Physics::VEC_ALIGN);
-            real *u_x0_yP1 = loc->u(ix, iy+1); USE_ALIGN(u_x0_yP1, Physics::VEC_ALIGN);
+            real *uy_x0_y0 = LOC->uy(ix, iy);  USE_ALIGN(uy_x0_y0, Physics::VEC_ALIGN);
+            real *u_x0_yM1 = LOC->u(ix, iy-1); USE_ALIGN(u_x0_yM1, Physics::VEC_ALIGN);
+            real *u_x0_yP1 = LOC->u(ix, iy+1); USE_ALIGN(u_x0_yP1, Physics::VEC_ALIGN);
 
-            real *gy_x0_y0 = loc->gy(ix, iy);  USE_ALIGN(gy_x0_y0, Physics::VEC_ALIGN);
-            real *g_x0_yM1 = loc->g(ix, iy-1); USE_ALIGN(g_x0_yM1, Physics::VEC_ALIGN);
-            real *g_x0_y0  = loc->g(ix, iy);   USE_ALIGN(g_x0_y0,  Physics::VEC_ALIGN);
-            real *g_x0_yP1 = loc->g(ix, iy+1); USE_ALIGN(g_x0_yP1, Physics::VEC_ALIGN);
+            real *gy_x0_y0 = LOC->gy(ix, iy);  USE_ALIGN(gy_x0_y0, Physics::VEC_ALIGN);
+            real *g_x0_yM1 = LOC->g(ix, iy-1); USE_ALIGN(g_x0_yM1, Physics::VEC_ALIGN);
+            real *g_x0_y0  = LOC->g(ix, iy);   USE_ALIGN(g_x0_y0,  Physics::VEC_ALIGN);
+            real *g_x0_yP1 = LOC->g(ix, iy+1); USE_ALIGN(g_x0_yP1, Physics::VEC_ALIGN);
 
             limdiff( ux_x0_y0, u_xM1_y0, u_x0_y0, u_xP1_y0 );
             limdiff( fx_x0_y0, f_xM1_y0, f_x0_y0, f_xP1_y0 );
@@ -541,9 +540,8 @@ void Central2D<Physics, Limiter>::limited_derivs(int tid)
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::compute_step(int tid, int io, real dt)
 {
-    auto loc = locals_[tid];
-    int ny_per_block  = loc->get_ny();// locals_[tid]->get_ny();
-    int nx_per_block  = loc->get_nx();// locals_[tid]->get_nx();
+    int ny_per_block  = LOC->get_ny();// locals_[tid]->get_ny();
+    int nx_per_block  = LOC->get_nx();// locals_[tid]->get_nx();
 
     real dtcdx2 = 0.5f * dt / dx;
     real dtcdy2 = 0.5f * dt / dy;
@@ -608,11 +606,11 @@ void Central2D<Physics, Limiter>::compute_step(int tid, int io, real dt)
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
             // gather the necessary information
-            real *uh    = loc->u(ix,iy);   USE_ALIGN(uh,    Physics::VEC_ALIGN);
-            real *fx_xy = loc->fx(ix, iy); USE_ALIGN(fx_xy, Physics::VEC_ALIGN);
-            real *gy_xy = loc->gy(ix, iy); USE_ALIGN(gy_xy, Physics::VEC_ALIGN);
-            real *f_xy  = loc->f(ix, iy);  USE_ALIGN(f_xy,  Physics::VEC_ALIGN);
-            real *g_xy  = loc->g(ix, iy);  USE_ALIGN(g_xy,  Physics::VEC_ALIGN);
+            real *uh    = LOC->u(ix,iy);   USE_ALIGN(uh,    Physics::VEC_ALIGN);
+            real *fx_xy = LOC->fx(ix, iy); USE_ALIGN(fx_xy, Physics::VEC_ALIGN);
+            real *gy_xy = LOC->gy(ix, iy); USE_ALIGN(gy_xy, Physics::VEC_ALIGN);
+            real *f_xy  = LOC->f(ix, iy);  USE_ALIGN(f_xy,  Physics::VEC_ALIGN);
+            real *g_xy  = LOC->g(ix, iy);  USE_ALIGN(g_xy,  Physics::VEC_ALIGN);
 
             // be careful not to modify u!!!            
             #pragma unroll
@@ -631,43 +629,43 @@ void Central2D<Physics, Limiter>::compute_step(int tid, int io, real dt)
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy) {
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
             /* Nomenclature:
-             *     u_x0_y0 <- loc->u(ix  , iy  )
-             *     u_x1_y0 <- loc->u(ix+1, iy  )
-             *     u_x0_y1 <- loc->u(ix  , iy+1)
-             *     u_x1_y1 <- loc->u(ix+1, iy+1)
+             *     u_x0_y0 <- LOC->u(ix  , iy  )
+             *     u_x1_y0 <- LOC->u(ix+1, iy  )
+             *     u_x0_y1 <- LOC->u(ix  , iy+1)
+             *     u_x1_y1 <- LOC->u(ix+1, iy+1)
              */
             // The final result
-            real *v_ix_iy = loc->v(ix, iy);       USE_ALIGN(v_ix_iy,  Physics::VEC_ALIGN );
+            real *v_ix_iy = LOC->v(ix, iy);       USE_ALIGN(v_ix_iy,  Physics::VEC_ALIGN );
 
             // grab u
-            real *u_x1_y0 = loc->u(ix+1, iy  );   USE_ALIGN(u_x1_y0,  Physics::VEC_ALIGN );
-            real *u_x0_y0 = loc->u(ix  , iy  );   USE_ALIGN(u_x0_y0,  Physics::VEC_ALIGN );
-            real *u_x0_y1 = loc->u(ix  , iy+1);   USE_ALIGN(u_x0_y1,  Physics::VEC_ALIGN );
-            real *u_x1_y1 = loc->u(ix+1, iy+1);   USE_ALIGN(u_x1_y1,  Physics::VEC_ALIGN );
+            real *u_x1_y0 = LOC->u(ix+1, iy  );   USE_ALIGN(u_x1_y0,  Physics::VEC_ALIGN );
+            real *u_x0_y0 = LOC->u(ix  , iy  );   USE_ALIGN(u_x0_y0,  Physics::VEC_ALIGN );
+            real *u_x0_y1 = LOC->u(ix  , iy+1);   USE_ALIGN(u_x0_y1,  Physics::VEC_ALIGN );
+            real *u_x1_y1 = LOC->u(ix+1, iy+1);   USE_ALIGN(u_x1_y1,  Physics::VEC_ALIGN );
 
             // grab ux
-            real *ux_x0_y0 = loc->ux(ix  , iy  ); USE_ALIGN(ux_x0_y0, Physics::VEC_ALIGN );
-            real *ux_x1_y0 = loc->ux(ix+1, iy  ); USE_ALIGN(ux_x1_y0, Physics::VEC_ALIGN );
-            real *ux_x0_y1 = loc->ux(ix  , iy+1); USE_ALIGN(ux_x0_y1, Physics::VEC_ALIGN );
-            real *ux_x1_y1 = loc->ux(ix+1, iy+1); USE_ALIGN(ux_x1_y1, Physics::VEC_ALIGN );
+            real *ux_x0_y0 = LOC->ux(ix  , iy  ); USE_ALIGN(ux_x0_y0, Physics::VEC_ALIGN );
+            real *ux_x1_y0 = LOC->ux(ix+1, iy  ); USE_ALIGN(ux_x1_y0, Physics::VEC_ALIGN );
+            real *ux_x0_y1 = LOC->ux(ix  , iy+1); USE_ALIGN(ux_x0_y1, Physics::VEC_ALIGN );
+            real *ux_x1_y1 = LOC->ux(ix+1, iy+1); USE_ALIGN(ux_x1_y1, Physics::VEC_ALIGN );
 
             // grab uy
-            real *uy_x0_y0 = loc->uy(ix  , iy  ); USE_ALIGN(uy_x0_y0, Physics::VEC_ALIGN );
-            real *uy_x1_y0 = loc->uy(ix+1, iy  ); USE_ALIGN(uy_x1_y0, Physics::VEC_ALIGN );
-            real *uy_x0_y1 = loc->uy(ix  , iy+1); USE_ALIGN(uy_x0_y1, Physics::VEC_ALIGN );
-            real *uy_x1_y1 = loc->uy(ix+1, iy+1); USE_ALIGN(uy_x1_y1, Physics::VEC_ALIGN );
+            real *uy_x0_y0 = LOC->uy(ix  , iy  ); USE_ALIGN(uy_x0_y0, Physics::VEC_ALIGN );
+            real *uy_x1_y0 = LOC->uy(ix+1, iy  ); USE_ALIGN(uy_x1_y0, Physics::VEC_ALIGN );
+            real *uy_x0_y1 = LOC->uy(ix  , iy+1); USE_ALIGN(uy_x0_y1, Physics::VEC_ALIGN );
+            real *uy_x1_y1 = LOC->uy(ix+1, iy+1); USE_ALIGN(uy_x1_y1, Physics::VEC_ALIGN );
 
             // grab f
-            real *f_x0_y0 = loc->f(ix  , iy  );   USE_ALIGN(f_x0_y0,  Physics::VEC_ALIGN );
-            real *f_x1_y0 = loc->f(ix+1, iy  );   USE_ALIGN(f_x1_y0,  Physics::VEC_ALIGN );
-            real *f_x0_y1 = loc->f(ix  , iy+1);   USE_ALIGN(f_x0_y1,  Physics::VEC_ALIGN );
-            real *f_x1_y1 = loc->f(ix+1, iy+1);   USE_ALIGN(f_x1_y1,  Physics::VEC_ALIGN );
+            real *f_x0_y0 = LOC->f(ix  , iy  );   USE_ALIGN(f_x0_y0,  Physics::VEC_ALIGN );
+            real *f_x1_y0 = LOC->f(ix+1, iy  );   USE_ALIGN(f_x1_y0,  Physics::VEC_ALIGN );
+            real *f_x0_y1 = LOC->f(ix  , iy+1);   USE_ALIGN(f_x0_y1,  Physics::VEC_ALIGN );
+            real *f_x1_y1 = LOC->f(ix+1, iy+1);   USE_ALIGN(f_x1_y1,  Physics::VEC_ALIGN );
 
             // grab g
-            real *g_x0_y0 = loc->g(ix  , iy  );   USE_ALIGN(g_x0_y0,  Physics::VEC_ALIGN );
-            real *g_x1_y0 = loc->g(ix+1, iy  );   USE_ALIGN(g_x1_y0,  Physics::VEC_ALIGN );
-            real *g_x0_y1 = loc->g(ix  , iy+1);   USE_ALIGN(g_x0_y1,  Physics::VEC_ALIGN );
-            real *g_x1_y1 = loc->g(ix+1, iy+1);   USE_ALIGN(g_x1_y1,  Physics::VEC_ALIGN );
+            real *g_x0_y0 = LOC->g(ix  , iy  );   USE_ALIGN(g_x0_y0,  Physics::VEC_ALIGN );
+            real *g_x1_y0 = LOC->g(ix+1, iy  );   USE_ALIGN(g_x1_y0,  Physics::VEC_ALIGN );
+            real *g_x0_y1 = LOC->g(ix  , iy+1);   USE_ALIGN(g_x0_y1,  Physics::VEC_ALIGN );
+            real *g_x1_y1 = LOC->g(ix+1, iy+1);   USE_ALIGN(g_x1_y1,  Physics::VEC_ALIGN );
 
             #pragma simd
             for(int m = 0; m < Physics::vec_size; ++m) {
@@ -689,8 +687,8 @@ void Central2D<Physics, Limiter>::compute_step(int tid, int io, real dt)
     // Copy from v storage back to main grid
     for (int j = nghost; j < ny+nghost; ++j){
         for (int i = nghost; i < nx+nghost; ++i){
-            real *u_ij = loc->u(i, j);
-            real *v_ij_io = loc->v(i-io, j-io);
+            real *u_ij = LOC->u(i, j);
+            real *v_ij_io = LOC->v(i-io, j-io);
 
             #pragma unroll
             for(int m = 0; m < Physics::vec_size; ++m) u_ij[m] = v_ij_io[m];
@@ -712,9 +710,8 @@ void Central2D<Physics, Limiter>::compute_step(int tid, int io, real dt)
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::copy_to_local(int tid)
 {
-    auto loc = locals_[tid];
-    int ny_per_block = loc->get_ny();// locals_[tid]->get_ny();
-    int nx_per_block = loc->get_nx();// locals_[tid]->get_nx();
+    int ny_per_block = LOC->get_ny();// locals_[tid]->get_ny();
+    int nx_per_block = LOC->get_nx();// locals_[tid]->get_nx();
 
     int biy     = tid / nxblocks;
     int bix     = tid % nxblocks;
@@ -724,7 +721,7 @@ void Central2D<Physics, Limiter>::copy_to_local(int tid)
     for (int iy = 0; iy < ny_per_block; ++iy) {
         for (int ix = 0; ix < nx_per_block; ++ix) {
             // locals_[tid]->u(ix, iy) = u(bix_off+ix, biy_off+iy);
-            real *locals_u = loc->u(ix, iy);            USE_ALIGN(locals_u, Physics::VEC_ALIGN );
+            real *locals_u = LOC->u(ix, iy);            USE_ALIGN(locals_u, Physics::VEC_ALIGN );
             real *global_u = u(bix_off+ix, biy_off+iy); USE_ALIGN(global_u, Physics::VEC_ALIGN );
 
             #pragma unroll
@@ -737,9 +734,8 @@ void Central2D<Physics, Limiter>::copy_to_local(int tid)
 template <class Physics, class Limiter>
 void Central2D<Physics, Limiter>::copy_from_local(int tid)
 {
-    auto loc = locals_[tid];
-    int ny_per_block = loc->get_ny();// locals_[tid]->get_ny();
-    int nx_per_block = loc->get_nx();// locals_[tid]->get_nx();
+    int ny_per_block = LOC->get_ny();// locals_[tid]->get_ny();
+    int nx_per_block = LOC->get_nx();// locals_[tid]->get_nx();
 
     int biy     = tid / nxblocks;
     int bix     = tid % nxblocks;
@@ -749,7 +745,7 @@ void Central2D<Physics, Limiter>::copy_from_local(int tid)
     for (int iy = nghost; iy < ny_per_block - nghost; ++iy) {
         for (int ix = nghost; ix < nx_per_block - nghost; ++ix) {
             // u(bix_off+ix, biy_off+iy) = locals_[tid]->u(ix, iy);
-            real *locals_u = loc->u(ix, iy);            USE_ALIGN(locals_u, Physics::VEC_ALIGN );
+            real *locals_u = LOC->u(ix, iy);            USE_ALIGN(locals_u, Physics::VEC_ALIGN );
             real *global_u = u(bix_off+ix, biy_off+iy); USE_ALIGN(global_u, Physics::VEC_ALIGN );
 
             #pragma unroll
