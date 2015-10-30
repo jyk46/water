@@ -404,11 +404,18 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     real dtcdx2 = 0.5f * dt / dx;
     real dtcdy2 = 0.5f * dt / dy;
 
+    USE_ALIGN(uh_copy, Physics::VEC_ALIGN);// just in case...
+
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy) {
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
-            real *uh = u(ix,iy);
+            // gather the necessary information
+            real *uh    = u(ix,iy);   USE_ALIGN(uh,    Physics::VEC_ALIGN);
+            real *fx_xy = fx(ix, iy); USE_ALIGN(fx_xy, Physics::VEC_ALIGN);
+            real *gy_xy = gy(ix, iy); USE_ALIGN(gy_xy, Physics::VEC_ALIGN);
+            real *f_xy  = f(ix, iy);  USE_ALIGN(f_xy,  Physics::VEC_ALIGN);
+            real *g_xy  = g(ix, iy);  USE_ALIGN(g_xy,  Physics::VEC_ALIGN);
 
             // be careful not to modify u!!!            
             #pragma unroll
@@ -416,10 +423,11 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
             
             #pragma unroll
             for (int m = 0; m < Physics::vec_size; ++m) {
-                uh_copy[m] -= dtcdx2 * fx(ix,iy)[m];
-                uh_copy[m] -= dtcdy2 * gy(ix,iy)[m];
+                uh_copy[m] -= dtcdx2 * fx_xy[m];// fx(ix,iy)[m];
+                uh_copy[m] -= dtcdy2 * gy_xy[m];// gy(ix,iy)[m];
             }
-            Physics::flux(f(ix,iy), g(ix,iy), uh_copy);
+            // Physics::flux(f(ix,iy), g(ix,iy), uh_copy);
+            Physics::flux(f_xy, g_xy, uh_copy);
         }
     }
 
