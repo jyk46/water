@@ -49,7 +49,7 @@ typedef Central2D< Shallow2D, MinMod<Shallow2D::real> > Sim;
  */
 
 // Circular dam break problem
-void dam_break(Sim::vec& u, double x, double y)
+void dam_break(Sim::real *u, double x, double y)
 {
     x -= 1;
     y -= 1;
@@ -59,7 +59,7 @@ void dam_break(Sim::vec& u, double x, double y)
 }
 
 // Still pond (ideally, nothing should move here!)
-void pond(Sim::vec& u, double x, double y)
+void pond(Sim::real *u, double x, double y)
 {
     u[0] = 1.0;
     u[1] = 0;
@@ -67,7 +67,7 @@ void pond(Sim::vec& u, double x, double y)
 }
 
 // River (ideally, the solver shouldn't do much with this, either)
-void river(Sim::vec& u, double x, double y)
+void river(Sim::real *u, double x, double y)
 {
     u[0] = 1.0;
     u[1] = 1.0;
@@ -76,7 +76,7 @@ void river(Sim::vec& u, double x, double y)
 
 
 // Wave on a river -- develops a shock in finite time!
-void wave(Sim::vec& u, double x, double y)
+void wave(Sim::real *u, double x, double y)
 {
     using namespace std;
     u[0] = 1.0 + 0.2 * sin(M_PI*x);
@@ -95,6 +95,7 @@ void wave(Sim::vec& u, double x, double y)
 
 int main(int argc, char** argv)
 {
+    double start_time = omp_get_wtime();
 #if defined _PARALLEL_DEVICE
     #pragma offload_transfer target(mic:0)
 #endif
@@ -177,4 +178,8 @@ int main(int argc, char** argv)
         sim.solution_check();
         viz.write_frame();
     }
+
+    double end_time = omp_get_wtime();
+    printf("\n#\n# Size: %d\n", nx);
+    printf("# Total Time: %.16g seconds\n#\n", end_time-start_time);
 }
