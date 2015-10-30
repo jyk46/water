@@ -10,6 +10,8 @@
 
 #include <xmmintrin.h>// _mm_malloc
 
+#include "LocalState.h"
+
 //ldoc on
 /**
  * # Jiang-Tadmor central difference scheme
@@ -159,7 +161,7 @@ public:
                 int nx_local = (i == nxblocks - 1) ? nx_per_block_padded - nx_overhang
                              :                       nx_per_block_padded;
                 locals_.push_back(
-                            std::make_unique<LocalState>(nx_local, ny_local)
+                            std::make_unique<LocalState<Physics>>(nx_local, ny_local)
                         );
             }
         }
@@ -194,65 +196,6 @@ public:
     }
 
 private:
-
-    // Class for encapsulating per-thread local state
-    class LocalState {
-    public:
-        LocalState(int nx, int ny)
-            : nx(nx), ny(ny) {
-        
-            u_  = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
-            f_  = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
-            g_  = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
-            ux_ = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
-            uy_ = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
-            fx_ = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
-            gy_ = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
-            v_  = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
-        }
-
-        ~LocalState() {
-            _mm_free(u_ );
-            _mm_free(f_ );
-            _mm_free(g_ );
-            _mm_free(ux_);
-            _mm_free(uy_);
-            _mm_free(fx_);
-            _mm_free(gy_);
-            _mm_free(v_ );
-        }
-
-        // Array accessor functions
-        inline real* u(int ix, int iy)    { return &u_[offset(ix,iy)];  }
-        inline real* v(int ix, int iy)    { return &v_[offset(ix,iy)];  }
-        inline real* f(int ix, int iy)    { return &f_[offset(ix,iy)];  }
-        inline real* g(int ix, int iy)    { return &g_[offset(ix,iy)];  }
-
-        inline real* ux(int ix, int iy)   { return &ux_[offset(ix,iy)]; }
-        inline real* uy(int ix, int iy)   { return &uy_[offset(ix,iy)]; }
-        inline real* fx(int ix, int iy)   { return &fx_[offset(ix,iy)]; }
-        inline real* gy(int ix, int iy)   { return &gy_[offset(ix,iy)]; }
-
-        // Miscellaneous accessors
-        inline int get_nx() { return nx; }
-        inline int get_ny() { return ny; }
-
-    private:
-        // Helper to calculate 1D offset from 2D coordinates
-        inline int offset(int ix, int iy) const { return (iy*nx+ix)*Physics::vec_size; }
-
-        const int nx, ny;
-
-        DEF_ALIGN(Physics::BYTE_ALIGN) real *u_; // Solution values
-        DEF_ALIGN(Physics::BYTE_ALIGN) real *f_; // Fluxes in x
-        DEF_ALIGN(Physics::BYTE_ALIGN) real *g_; // Fluxes in y
-        DEF_ALIGN(Physics::BYTE_ALIGN) real *ux_;// x differences of u
-        DEF_ALIGN(Physics::BYTE_ALIGN) real *uy_;// y differences of u
-        DEF_ALIGN(Physics::BYTE_ALIGN) real *fx_;// x differences of f
-        DEF_ALIGN(Physics::BYTE_ALIGN) real *gy_;// y differences of g
-        DEF_ALIGN(Physics::BYTE_ALIGN) real *v_; // Solution values at next step
-    };
-
     const int nghost;             // Number of ghost cells
     const int nx, ny;             // Number of (non-ghost) cells in x/y
     const int nxblocks, nyblocks; // Number of blocks for batching in x/y
@@ -266,8 +209,7 @@ private:
     DEF_ALIGN(Physics::BYTE_ALIGN) real *u_;
 
     // Local state (per-thread)
-    // std::vector<std::unique_ptr<LocalState>> locals_;
-    std::vector<std::unique_ptr<LocalState>> locals_;
+    std::vector< std::unique_ptr< LocalState<Physics> > > locals_;
 
     // Array accessor function
 
