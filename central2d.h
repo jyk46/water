@@ -126,7 +126,7 @@ public:
         v_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
 
         // used in compute_step
-        // uh_copy = (real *)_mm_malloc(sizeof(real)*Physics::vec_size, UH_ALIGN);
+        uh_copy = (real *)_mm_malloc(sizeof(real)*Physics::vec_size, Physics::VEC_ALIGN);
     }
 
     ~Central2D() {
@@ -138,7 +138,7 @@ public:
         if(fx_) _mm_free(fx_);
         if(gy_) _mm_free(gy_);
         if(v_ ) _mm_free(v_ );
-        // if(uh_copy) _mm_free(uh_copy);
+        if(uh_copy) _mm_free(uh_copy);
     }
 
     // Advance from time 0 to time tfinal
@@ -181,7 +181,7 @@ private:
     DEF_ALIGN(Physics::BYTE_ALIGN) real *gy_;           // y differences of g
     DEF_ALIGN(Physics::BYTE_ALIGN) real *v_;            // Solution values at next step
 
-    // DEF_ALIGN(UH_ALIGN) real *uh_copy;       // used in compute_step
+    DEF_ALIGN(Physics::VEC_ALIGN) real *uh_copy;        // used in compute_step
 
     // Array accessor functions
 
@@ -403,15 +403,6 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
 {
     real dtcdx2 = 0.5f * dt / dx;
     real dtcdy2 = 0.5f * dt / dy;
-
-    /* (!) CAUTION (!)
-     * Only valid because:
-     *     - uh_copy is SMALL: 16bytes to be exact
-     *     - the function it is being called with is INLINE
-     * So basically, this is super dangerous, and probably a terrible idea...
-     */
-    // real *uh_copy = (real *)alloca(sizeof(real)*Physics::vec_size); USE_ALIGN(uh_copy, Physics::VEC_ALIGN);
-    real uh_copy[] = {0.0f, 0.0f, 0.0f, 0.0f}; USE_ALIGN(uh_copy, Physics::VEC_ALIGN);
 
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy) {
