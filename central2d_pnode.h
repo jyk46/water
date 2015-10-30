@@ -234,13 +234,13 @@ private:
         inline real* fx(int ix, int iy)   { return &fx_[offset(ix,iy)]; }
         inline real* gy(int ix, int iy)   { return &gy_[offset(ix,iy)]; }
 
-      // Miscellaneous accessors
-      int get_nx() { return nx; }
-      int get_ny() { return ny; }
+        // Miscellaneous accessors
+        inline int get_nx() { return nx; }
+        inline int get_ny() { return ny; }
 
     private:
         // Helper to calculate 1D offset from 2D coordinates
-        inline int offset(int ix, int iy) const { return (iy*nx_all+ix)*Physics::vec_size; }
+        inline int offset(int ix, int iy) const { return (iy*nx+ix)*Physics::vec_size; }
 
         const int nx, ny;
 
