@@ -62,30 +62,32 @@ struct MinMod {
     #if defined _PARALLEL_DEVICE
     __declspec(target(mic))
     #endif
-    static constexpr real theta = 2.0;
+    static constexpr real theta = 2.0f;
 
     // Branch-free computation of minmod of two numbers
+    #pragma omp declare simd
     #if defined _PARALLEL_DEVICE
     __declspec(target(mic))
     #endif
     static inline real xmin2s(real s, real a, real b) {
-        real sa = copysignf(s, a);
-        real sb = copysignf(s, b);
-        real abs_a = fabsf(a);
-        real abs_b = fabsf(b);
+        real sa      = copysignf(s, a);
+        real sb      = copysignf(s, b);
+        real abs_a   = fabsf(a);
+        real abs_b   = fabsf(b);
         real min_abs = (abs_a < abs_b ? abs_a : abs_b);
         return (sa+sb) * min_abs;
     }
 
     // Limited combined slope estimate
+    #pragma omp declare simd
     #if defined _PARALLEL_DEVICE
     __declspec(target(mic))
     #endif
-    static real limdiff(real um, real u0, real up) {
+    static inline real limdiff(real um, real u0, real up) {
         real du1 = u0-um;         // Difference to left
         real du2 = up-u0;         // Difference to right
-        real duc = up-um; // Centered difference
-        return xmin2s( 0.25, xmin2s(theta, du1, du2), duc );
+        real duc = up-um;         // Centered difference
+        return xmin2s( 0.25f, xmin2s(theta, du1, du2), duc );
     }
 
 
