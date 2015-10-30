@@ -124,9 +124,6 @@ public:
         fx_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
         gy_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
         v_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
-
-        // used in compute_step
-        uh_copy = (real *)_mm_malloc(sizeof(real)*Physics::vec_size, Physics::VEC_ALIGN);
     }
 
     ~Central2D() {
@@ -138,7 +135,6 @@ public:
         if(fx_) _mm_free(fx_);
         if(gy_) _mm_free(gy_);
         if(v_ ) _mm_free(v_ );
-        if(uh_copy) _mm_free(uh_copy);
     }
 
     // Advance from time 0 to time tfinal
@@ -180,8 +176,6 @@ private:
     DEF_ALIGN(Physics::BYTE_ALIGN) real *fx_;           // x differences of f
     DEF_ALIGN(Physics::BYTE_ALIGN) real *gy_;           // y differences of g
     DEF_ALIGN(Physics::BYTE_ALIGN) real *v_;            // Solution values at next step
-
-    DEF_ALIGN(Physics::VEC_ALIGN) real *uh_copy;        // used in compute_step
 
     // Array accessor functions
 
@@ -404,7 +398,7 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     real dtcdx2 = 0.5f * dt / dx;
     real dtcdy2 = 0.5f * dt / dy;
 
-    USE_ALIGN(uh_copy, Physics::VEC_ALIGN);// just in case...
+    real uh_copy[] = {0.0f, 0.0f, 0.0f, 0.0f};
 
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy) {
