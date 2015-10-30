@@ -13,4 +13,4 @@ DISPATCH_TYPE=${TYPE:-dam_break}
 
 module load cs5220
 cd $PBS_O_WORKDIR
-./shallow -i $TYPE -o $TYPE".out" -n $DISPATCH_SIZE
+./shallow -n $DISPATCH_SIZE -i $DISPATCH_TYPE -o $DISPATCH_TYPE".out"
