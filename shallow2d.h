@@ -82,18 +82,23 @@
 struct Shallow2D {
 
     // vec size for loop unrolling innermost loops in solver
-    TARGET_MIC static constexpr int vec_size   = 4;
-    TARGET_MIC static constexpr int BYTE_ALIGN = 64;
-    TARGET_MIC static constexpr int VEC_ALIGN  = 16;
+    TARGET_MIC
+    static constexpr int vec_size   = 4;
+    TARGET_MIC
+    static constexpr int BYTE_ALIGN = 64;
+    TARGET_MIC
+    static constexpr int VEC_ALIGN  = 16;
 
     // Type parameters for solver
     typedef float real;
 
     // Gravitational force (compile time constant)
-    TARGET_MIC static constexpr real g = 9.8f;
+    TARGET_MIC
+    static constexpr real g = 9.8f;
 
     // Compute shallow water fluxes F(U), G(U)
-    TARGET_MIC static inline void flux(real *FU, real *GU, const real *U) {
+    TARGET_MIC
+    static inline void flux(real *FU, real *GU, const real *U) {
         USE_ALIGN(FU, VEC_ALIGN);
         USE_ALIGN(GU, VEC_ALIGN);
         USE_ALIGN(U , VEC_ALIGN);
@@ -110,8 +115,8 @@ struct Shallow2D {
     }
 
     // Compute shallow water wave speed
-
-    TARGET_MIC static inline void wave_speed(real& cx, real& cy, const real *U) {
+    TARGET_MIC
+    static inline void wave_speed(real& cx, real& cy, const real *U) {
         using namespace std;
         USE_ALIGN(U, VEC_ALIGN);
 
