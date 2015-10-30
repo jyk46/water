@@ -8,8 +8,8 @@
 # if not called with SIZE=???, set to 200
 DISPATCH_SIZE=${SIZE:-200}
 
-# type can be dam_break, pnd, river, or wave
-DISPATCH_TYPE=${TYPE:-dam_break}
+# type can be dam_break, pond, river, or wave
+DISPATCH_TYPE=${TYPE:-"dam_break"}
 
 module load cs5220
 cd $PBS_O_WORKDIR

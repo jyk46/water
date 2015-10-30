@@ -185,5 +185,14 @@ int main(int argc, char** argv)
 
     double end_time = omp_get_wtime();
     printf("\n#\n# Size: %d\n", nx);
-    printf("# Total Time: %.16g seconds\n#\n", end_time-start_time);
+    printf("# Total Time: %.16g seconds\n", end_time-start_time);
+    #if defined _SERIAL
+        printf("#\n");
+    #else
+        #if defined _PARALLEL_NODE
+            printf("# Node: Thread X [%d] * Thread Y [%d] = %d Threads\n", nxblocks, nyblocks, (nxblocks*nyblocks));
+        #else // _PARALLEL_DEVICE
+            printf("# Device: Thread X [%d] * Thread Y [%d] = %d Threads\n", nxblocks, nyblocks, (nxblocks*nyblocks));
+        #endif
+    #endif
 }
