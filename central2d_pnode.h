@@ -267,7 +267,8 @@ private:
     DEF_ALIGN(Physics::BYTE_ALIGN) real *u_;
 
     // Local state (per-thread)
-    std::vector<std::unique_ptr<LocalState>> locals_;
+    // std::vector<std::unique_ptr<LocalState>> locals_;
+    std::vector<std::shared_ptr<LocalState>> locals_;
 
     // Array accessor function
 
