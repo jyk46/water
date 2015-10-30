@@ -272,9 +272,6 @@ void Central2D<Physics, Limiter>::apply_periodic()
     // Copy data between right and left boundaries
     for (int iy = 0; iy < ny_all; ++iy)
         for (int ix = 0; ix < nghost; ++ix) {
-            // u(ix,          iy) = uwrap(ix,          iy);
-            // u(nx+nghost+ix,iy) = uwrap(nx+nghost+ix,iy);
-
             real *u_xy        = u(ix, iy);              USE_ALIGN(u_xy, UH_ALIGN);
             real *uwrap_xy    = uwrap(ix, iy);          USE_ALIGN(uwrap_xy, UH_ALIGN);
             real *u_ghost     = u(nx+nghost+ix,iy);     USE_ALIGN(u_ghost, UH_ALIGN);
@@ -290,9 +287,6 @@ void Central2D<Physics, Limiter>::apply_periodic()
     // Copy data between top and bottom boundaries
     for (int ix = 0; ix < nx_all; ++ix)
         for (int iy = 0; iy < nghost; ++iy) {
-            // u(ix,          iy) = uwrap(ix,          iy);
-            // u(ix,ny+nghost+iy) = uwrap(ix,ny+nghost+iy);
-
             real *u_xy        = u(ix, iy);              USE_ALIGN(u_xy, UH_ALIGN);
             real *uwrap_xy    = uwrap(ix, iy);          USE_ALIGN(uwrap_xy, UH_ALIGN);
             real *u_ghost     = u(ix,ny+nghost+iy);     USE_ALIGN(u_ghost, UH_ALIGN);
@@ -355,12 +349,12 @@ void Central2D<Physics, Limiter>::limited_derivs()
             //
             real *ux_x0_y0 = ux(ix, iy);  USE_ALIGN(ux_x0_y0, Physics::VEC_ALIGN);
             real *u_xM1_y0 = u(ix-1, iy); USE_ALIGN(u_xM1_y0, Physics::VEC_ALIGN);
-            real *u_x0_y0  = u(ix, iy);   USE_ALIGN(u_x0_y0, Physics::VEC_ALIGN);
+            real *u_x0_y0  = u(ix, iy);   USE_ALIGN(u_x0_y0,  Physics::VEC_ALIGN);
             real *u_xP1_y0 = u(ix+1, iy); USE_ALIGN(u_xP1_y0, Physics::VEC_ALIGN);
 
             real *fx_x0_y0 = fx(ix, iy);  USE_ALIGN(fx_x0_y0, Physics::VEC_ALIGN);
             real *f_xM1_y0 = f(ix-1, iy); USE_ALIGN(f_xM1_y0, Physics::VEC_ALIGN);
-            real *f_x0_y0  = f(ix, iy);   USE_ALIGN(f_x0_y0, Physics::VEC_ALIGN);
+            real *f_x0_y0  = f(ix, iy);   USE_ALIGN(f_x0_y0,  Physics::VEC_ALIGN);
             real *f_xP1_y0 = f(ix+1, iy); USE_ALIGN(f_xP1_y0, Physics::VEC_ALIGN);
 
             //
@@ -372,7 +366,7 @@ void Central2D<Physics, Limiter>::limited_derivs()
 
             real *gy_x0_y0 = gy(ix, iy);  USE_ALIGN(gy_x0_y0, Physics::VEC_ALIGN);
             real *g_x0_yM1 = g(ix, iy-1); USE_ALIGN(g_x0_yM1, Physics::VEC_ALIGN);
-            real *g_x0_y0  = g(ix, iy);   USE_ALIGN(g_x0_y0, Physics::VEC_ALIGN);
+            real *g_x0_y0  = g(ix, iy);   USE_ALIGN(g_x0_y0,  Physics::VEC_ALIGN);
             real *g_x0_yP1 = g(ix, iy+1); USE_ALIGN(g_x0_yP1, Physics::VEC_ALIGN);
 
             limdiff( ux_x0_y0, u_xM1_y0, u_x0_y0, u_xP1_y0 );
@@ -438,21 +432,6 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     // Corrector (finish the step)
     for (int iy = nghost-io; iy < ny+nghost-io; ++iy) {
         for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
-
-            // #pragma unroll
-            // for (int m = 0; m < Physics::vec_size; ++m) {
-            //     v(ix,iy)[m] =
-            //         0.2500 * ( u(ix,  iy)[m] + u(ix+1,iy  )[m] +
-            //                    u(ix,iy+1)[m] + u(ix+1,iy+1)[m] ) -
-            //         0.0625 * ( ux(ix+1,iy  )[m] - ux(ix,iy  )[m] +
-            //                    ux(ix+1,iy+1)[m] - ux(ix,iy+1)[m] +
-            //                    uy(ix,  iy+1)[m] - uy(ix,  iy)[m] +
-            //                    uy(ix+1,iy+1)[m] - uy(ix+1,iy)[m] ) -
-            //         dtcdx2 * ( f(ix+1,iy  )[m] - f(ix,iy  )[m] +
-            //                    f(ix+1,iy+1)[m] - f(ix,iy+1)[m] ) -
-            //         dtcdy2 * ( g(ix,  iy+1)[m] - g(ix,  iy)[m] +
-            //                    g(ix+1,iy+1)[m] - g(ix+1,iy)[m] );
-            // }
             /* Nomenclature:
              *     u_x0_y0 <- u(ix  , iy  )
              *     u_x1_y0 <- u(ix+1, iy  )
@@ -512,7 +491,6 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     // Copy from v storage back to main grid
     for (int j = nghost; j < ny+nghost; ++j){
         for (int i = nghost; i < nx+nghost; ++i){
-            // u(i,j) = v(i-io,j-io);
             real *u_ij = u(i, j);
             real *v_ij_io = v(i-io, j-io);
 
