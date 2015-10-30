@@ -542,9 +542,12 @@ void Central2D<Physics, Limiter>::compute_step(int tid, int io, real dt)
     real uh_copy[] = {0.0f, 0.0f, 0.0f, 0.0f};
 
     // Predictor (flux values of f and g at half step)
-    for (int iy = 1; iy < ny_all-1; ++iy) {
+    // for (int iy = 1; iy < ny_all-1; ++iy) {
+    //     #pragma simd
+    //     for (int ix = 1; ix < nx_all-1; ++ix) {
+    for (int iy = 1; iy < ny_per_block-1; ++iy) {
         #pragma simd
-        for (int ix = 1; ix < nx_all-1; ++ix) {
+        for (int ix = 1; ix < nx_per_block-1; ++ix) {
             // gather the necessary information
             real *uh    = LOC->u(ix,iy);   USE_ALIGN(uh,    Physics::VEC_ALIGN);
             real *fx_xy = LOC->fx(ix, iy); USE_ALIGN(fx_xy, Physics::VEC_ALIGN);
@@ -566,8 +569,10 @@ void Central2D<Physics, Limiter>::compute_step(int tid, int io, real dt)
     }
 
     // Corrector (finish the step)
-    for (int iy = nghost-io; iy < ny+nghost-io; ++iy) {
-        for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
+    // for (int iy = nghost-io; iy < ny+nghost-io; ++iy) {
+    //     for (int ix = nghost-io; ix < nx+nghost-io; ++ix) {
+    for (int iy = nghost-io; iy < ny_per_block-nghost-io; ++iy) {
+        for (int ix = nghost-io; ix < nx_per_block-nghost-io; ++ix) {
             /* Nomenclature:
              *     u_x0_y0 <- LOC->u(ix  , iy  )
              *     u_x1_y0 <- LOC->u(ix+1, iy  )
@@ -625,8 +630,10 @@ void Central2D<Physics, Limiter>::compute_step(int tid, int io, real dt)
     }
 
     // Copy from v storage back to main grid
-    for (int j = nghost; j < ny+nghost; ++j){
-        for (int i = nghost; i < nx+nghost; ++i){
+    // for (int j = nghost; j < ny+nghost; ++j){
+    //     for (int i = nghost; i < nx+nghost; ++i){
+    for (int j = nghost; j < ny_per_block-nghost; ++j) {
+        for (int i = nghost; i < nx_per_block-nghost; ++i) {
             real *u_ij = LOC->u(i, j);
             real *v_ij_io = LOC->v(i-io, j-io);
 
