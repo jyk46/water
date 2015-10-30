@@ -404,12 +404,16 @@ void Central2D<Physics, Limiter>::compute_step(int io, real dt)
     real dtcdx2 = 0.5f * dt / dx;
     real dtcdy2 = 0.5f * dt / dy;
 
-    // USE_ALIGN(uh_copy, Physics::VEC_ALIGN);
+    /* (!) CAUTION (!)
+     * Only valid because:
+     *     - uh_copy is SMALL: 16bytes to be exact
+     *     - the function it is being called with is INLINE
+     * So basically, this is super dangerous, and probably a terrible idea...
+     */
+    real *uh_copy = (real *)alloca(sizeof(real)*Physics::vec_size); USE_ALIGN(uh_copy, Physics::VEC_ALIGN);
 
     // Predictor (flux values of f and g at half step)
     for (int iy = 1; iy < ny_all-1; ++iy) {
-        real uh_copy[] = {0.0f, 0.0f, 0.0f, 0.0f};
-
         #pragma simd
         for (int ix = 1; ix < nx_all-1; ++ix) {
             real *uh = u(ix,iy);
