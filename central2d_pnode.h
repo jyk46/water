@@ -202,14 +202,14 @@ private:
         LocalState(int nx, int ny)
             : nx(nx), ny(ny) {
         
-            u_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
-            f_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
-            g_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
-            ux_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
-            uy_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
-            fx_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
-            gy_ = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
-            v_  = (real *)_mm_malloc(sizeof(real) * nx_all * ny_all * Physics::vec_size, Physics::BYTE_ALIGN);
+            u_  = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
+            f_  = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
+            g_  = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
+            ux_ = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
+            uy_ = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
+            fx_ = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
+            gy_ = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
+            v_  = (real *)_mm_malloc(sizeof(real) * nx * ny * Physics::vec_size, Physics::BYTE_ALIGN);
         }
 
         ~LocalState() {
