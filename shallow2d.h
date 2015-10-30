@@ -76,9 +76,11 @@
     #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
 #endif
 
-#define TARGET_MIC #if defined _PARALLEL_DEVICE \
-                       __declspec(target(mic))  \
-                   #endif
+#if defined _PARALLEL_DEVICE
+    #define TARGET_MIC __declspec(target(mic))
+#else
+    #define TARGET_MIC /* n/a */
+#endif
 struct Shallow2D {
 
     // vec size for loop unrolling innermost loops in solver
