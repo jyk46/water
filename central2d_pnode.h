@@ -158,19 +158,16 @@ public:
             for (int i = 0; i < nxblocks; ++i) {
                 int nx_local = (i == nxblocks - 1) ? nx_per_block_padded - nx_overhang
                              :                       nx_per_block_padded;
-                locals_.emplace_back(
-                            std::unique_ptr<LocalState>(
-                                new LocalState(nx_local, ny_local)
-                            )
+                locals_.push_back(
+                            std::make_unique<LocalState>(nx_local, ny_local)
                         );
             }
         }
     }
 
     ~Central2D() {
-        if(u_) _mm_free(u_);
+        _mm_free(u_);
         // locals_ is an std::vector, and will delete everything for us xD
-        // this is why we work in c++
     }
 
     // Advance from time 0 to time tfinal
@@ -215,14 +212,14 @@ private:
         }
 
         ~LocalState() {
-            if(u_ ) _mm_free(u_ );
-            if(f_ ) _mm_free(f_ );
-            if(g_ ) _mm_free(g_ );
-            if(ux_) _mm_free(ux_);
-            if(uy_) _mm_free(uy_);
-            if(fx_) _mm_free(fx_);
-            if(gy_) _mm_free(gy_);
-            if(v_ ) _mm_free(v_ );
+            _mm_free(u_ );
+            _mm_free(f_ );
+            _mm_free(g_ );
+            _mm_free(ux_);
+            _mm_free(uy_);
+            _mm_free(fx_);
+            _mm_free(gy_);
+            _mm_free(v_ );
         }
 
         // Array accessor functions
@@ -269,6 +266,7 @@ private:
     DEF_ALIGN(Physics::BYTE_ALIGN) real *u_;
 
     // Local state (per-thread)
+    // std::vector<std::unique_ptr<LocalState>> locals_;
     std::vector<std::unique_ptr<LocalState>> locals_;
 
     // Array accessor function
