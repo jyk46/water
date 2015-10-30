@@ -156,7 +156,8 @@ public:
                 int nx_local = (i == nxblocks - 1) ? nx_per_block_padded - nx_overhang
                              :                       nx_per_block_padded;
                 locals_.emplace_back(
-                            std::unique_ptr<LocalState>(
+                            // std::unique_ptr<LocalState>(
+                        std::shared_ptr<LocalState>(
                                 new LocalState(nx_local, ny_local)
                             )
                         );
