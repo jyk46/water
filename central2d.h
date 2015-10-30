@@ -212,7 +212,7 @@ private:
         USE_ALIGN(up, Physics::VEC_ALIGN);
 
         #pragma ivdep
-        for (int m = 0; m < du.size(); ++m)
+        for (int m = 0; m < Physics::vec_size; ++m)
             du[m] = Limiter::limdiff(um[m], u0[m], up[m]);
     }
 

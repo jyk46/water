@@ -144,7 +144,7 @@ int main(int argc, char** argv)
         }
     }
 
-    void (*icfun)(Sim::vec& u, double x, double y) = dam_break;
+    void (*icfun)(Sim::real *u, double x, double y) = dam_break;
     if (ic == "dam_break") {
         icfun = dam_break;
     } else if (ic == "pond") {
