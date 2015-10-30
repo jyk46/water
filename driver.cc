@@ -147,12 +147,16 @@ int main(int argc, char** argv)
     void (*icfun)(Sim::real *u, double x, double y) = dam_break;
     if (ic == "dam_break") {
         icfun = dam_break;
+        printf("# dam_break\n");
     } else if (ic == "pond") {
         icfun = pond;
+        printf("# pond\n");
     } else if (ic == "river") {
         icfun = river;
+        printf("# river\n");
     } else if (ic == "wave") {
         icfun = wave;
+        printf("# wave\n");
     } else {
         fprintf(stderr, "Unknown initial conditions\n");
     }
