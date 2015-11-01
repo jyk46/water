@@ -769,7 +769,8 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
             in(dev_y_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
             in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
             in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))  \
-            in(teardown)
+            in(teardown)                                                               \
+            optional
     {
 
 
