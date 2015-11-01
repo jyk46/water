@@ -741,7 +741,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     int   num_serial = serial.size()*Physics::vec_size;
 
 
-    #pragma offload target(mic:0)
+    #pragma offload target(mic:0) \
             in(host_params.nghost)   in(host_params.nx)       in(host_params.ny)      \ // sim params
             in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch)  \ // ''''''''''
             in(host_params.nthreads) in(host_params.nx_all)   in(host_params.ny_all)  \ // ''''''''''
