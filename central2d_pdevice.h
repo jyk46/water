@@ -675,13 +675,103 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     int init  = first_iter ? 1 : 0;
     int destroy = last_iter ? 1 : 0;
 
-    #pragma offload target(mic:0) in(nghost) in(nx) in(ny) in(nxblocks) in(nyblocks) \
-                                  in(nbatch) in(nthreads) in(nx_all) in(ny_all) \
-                                  in(dx) in(dy) in(cfl) in(tfinal) \
-                                  inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy))
+    //! HOST side params
+    Parameters host_params;
+    host_params.nghost   = nghost;
+    host_params.nx       = nx;
+    host_params.ny       = ny;
+    host_params.nxblocks = nxblocks;
+    host_params.nyblocks = nyblocks;
+    host_params.nbatch   = nbatch;
+    host_params.nthreads = nthreads;
+    host_params.nx_all   = nx_all;
+    host_params.ny_all   = ny_all;
+    host_params.dx       = dx;
+    host_params.dy       = dy;
+    host_params.cfl      = cfl;
+
+    // Initialize per-thread local buffers on the device
+    std::vector<LocalState<Physics>*> host_locals;
+    if(first_iter) init_locals(host_params, host_locals);// only need these once
+
+    //
+    // time for some shenanigans;;; first iter := HUGE overhead, may run out of memory?
+    //
+    // int nx, ny, size;
+    std::vector<int> dev_x;
+    std::vector<int> dev_y;
+    std::vector<int> dev_s;
+    std::vector<vec> serial;
+
+    int num_locals = host_locals.size();
+    int size_locals = num_locals*sizeof(LocalState<Physics>*);
+    LocalState<Physics> *all_locals;// !danger
+    size_t num_vecs = 0;
+    if(first_iter) {
+        all_locals = host_locals.data();
+
+
+        // serialize nx / ny / size for reconstruction on the phi
+        for(auto i = 0; i < num_locals; ++i) {
+            dev_x.emplace_back(host_locals[i].nx);
+            dev_y.emplace_back(host_locals[i].ny);
+            dev_s.emplace_back(host_locals[i].size);
+            num_vecs += host_locals[i].size;
+        }
+
+        // turn all serial vectors into one contiguous serial vector
+        serial.reserve(num_vecs);
+        size_t index = 0;
+        for(auto i = 0; i < num_locals; ++i) {
+            for(auto j = 0; j < host_locals[i].serial.size(); ++j) {
+                #pragma unroll
+                for(auto m = 0; m < Physics::vec_size; ++m) {
+                    serial[index][m] = host_locals[i].serial[j][m];
+                }
+                ++index;
+            }
+        }
+    }
+
+    // grab all data pointers
+    int  *dev_x_data = dev_x.data();// may all be `undefined` when !first_iter
+    int  *dev_y_data = dev_y.data();
+    int  *dev_s_data = dev_s.data();
+    real *all_serial = reinterpret_cast<real*>(serial.data());
+    int   num_serial = serial.size()*Physics::vec_size;
+
+
+    #pragma offload target(mic:0) in(host_params.nghost)   in(host_params.nx)       in(host_params.ny)     \ // sim params
+                                  in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch) \ // ''''''''''
+                                  in(host_params.nthreads) in(host_params.nx_all)   in(host_params.ny_all) \ // ''''''''''
+                                  in(host_params.dx)       in(host_params.dy)       in(host_params.cfl)    \ // ''''''''''
+                                  in(tfinal)                                                               \ // ''''''''''
+                                  inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy))\ // global u, needs to go every time to write_frame
+                                  in(num_locals)                                                           \ // how many LocalState<Physics> there are
+                                  in(all_locals   : length(num_locals)     alloc_if(init) free_if(destroy))\ // serialized LocalState<Physics>
+                                  in(dev_x_data   : length(num_locals)     alloc_if(init) free_if(destroy))\ // all nx
+                                  in(dev_y_data   : length(num_locals)     alloc_if(init) free_if(destroy))\ // all ny
+                                  in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy))\ // all size
+                                  in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))
     {
 
-        // Copy parameters from host to device
+        //? reconstruct locals only on first iteration
+        std::vector<LocalState<Physics>> *locals;
+        if(num_locals) {// jajajajajajajajajajajajajajajajaja
+            locals = new std::vector<LocalState<Physics>>();
+            locals->assign(all_locals, all_locals+num_locals);
+            size_t offset = 0;
+            for(auto i = 0; i < num_locals; ++i) {
+                locals[i]->init(dev_x_data[i],
+                                dev_y_data[i],
+                                dev_s_data[i],
+                                all_serial[offset]);
+                offset += dev_s_data[i]*Physics::vec_size;
+            }
+        }
+
+
+        //! DEVICE side params
         Parameters params;
         params.nghost   = nghost;
         params.nx       = nx;
@@ -695,10 +785,6 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
         params.dx       = dx;
         params.dy       = dy;
         params.cfl      = cfl;
-
-        // Initialize per-thread local buffers on the device
-        std::vector<LocalState<Physics>*> locals;
-        init_locals(params, locals);
 
         // Main computation loop
         bool done = false;
@@ -731,21 +817,21 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
                 int tid = omp_get_thread_num();
 
                 // Copy global data to local buffers
-                copy_to_local(params, locals[tid], tid, u_offload);
+                copy_to_local(params, *locals[tid], tid, u_offload);
 
                 // Batch multiple timesteps
                 for (int bi = 0; bi < modified_nbatch; ++bi) {
 
                     // Execute the even and odd sub-steps for each super-step
                     for (int io = 0; io < 2; ++io) {
-                        compute_flux(params, locals[tid]);
-                        limited_derivs(params, locals[tid]);
-                        compute_step(params, locals[tid], io, dt);
+                        compute_flux(params, *locals[tid]);
+                        limited_derivs(params, *locals[tid]);
+                        compute_step(params, *locals[tid], io, dt);
                     }
                 }
 
                 // Copy local data to global buffer
-                copy_from_local(params, locals[tid], tid, u_offload);
+                copy_from_local(params, *locals[tid], tid, u_offload);
             }
 
             // Update simulated time
@@ -753,8 +839,8 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
         }
 
         // Clean up local state
-        for (auto local : locals) delete local;
     } // end pragma offload
+    // for (auto local : locals) delete local;
 }
 
 /**

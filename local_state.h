@@ -49,7 +49,7 @@ public:
     }
 
     // the device side
-    LocalState(int nx, int ny, int size, vec *data) {
+    void init(int nx, int ny, int size, vec *data) {
         serial.assign(data, data+size);
         vec *start = serial.data();
         u_         = start + (0*size);
@@ -76,11 +76,14 @@ public:
     inline int get_nx() { return nx; }
     inline int get_ny() { return ny; }
 
+    // danger: don't touch these if you don't know what you are doing...
+    int nx, ny, size;
+    aligned_vector serial;
+
 private:
     // Helper to calculate 1D offset from 2D coordinates
     inline int offset(int ix, int iy) const { return iy*nx+ix; }
 
-    const int nx, ny, size;
 
     #ifdef _PARALLEL_DEVICE
         typedef std::vector<vec> aligned_vector; // :'(
@@ -88,7 +91,6 @@ private:
         typedef DEF_ALIGN(Physics::BYTE_ALIGN) std::vector<vec, aligned_allocator<vec, Physics::BYTE_ALIGN>> aligned_vector;
     #endif
 
-    aligned_vector serial;
 
     vec *u_;  // Solution values
     vec *v_;  // Solution values at next step
