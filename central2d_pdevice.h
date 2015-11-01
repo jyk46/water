@@ -776,7 +776,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
         //? reconstruct locals only on first iteration
         // std::vector<LocalState<Physics>*> locals;
 
-        LocalState<Physics> **locals;
+        LocalState<Physics> **locals = reinterpret_cast<LocalState<Physics>**>(all_locals);
 
         if(num_locals) {// jajajajajajajajajajajajajajajajaja
             // locals = new std::vector<LocalState<Physics>*>();
@@ -784,7 +784,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
             // LocalState<Physics> *ze_locals = reinterpret_cast<LocalState<Physics>*>(all_locals);
             // locals->assign(ze_locals, ze_locals+num_locals);
 
-            locals = reinterpret_cast<LocalState<Physics>**>(all_locals);
+            // locals = reinterpret_cast<LocalState<Physics>**>(all_locals);
 
             size_t offset = 0;
             for(auto i = 0; i < num_locals; ++i) {
