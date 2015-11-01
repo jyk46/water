@@ -703,12 +703,16 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     std::vector<int> dev_s;
     std::vector<vec> serial;
 
+    printf(" -- everybody localized\n");
+
     int num_locals = host_locals.size();
     int size_locals = num_locals*sizeof(LocalState<Physics>*);
     // void *all_locals;// !danger
     void *all_locals = reinterpret_cast<void*>(host_locals.data());
     size_t num_vecs = 0;
     if(first_iter) {
+
+        printf(" -- first iter\n");
         // all_locals = reinterpret_cast<void*>(host_locals.data());
 
 
@@ -719,6 +723,8 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
             dev_s.emplace_back(host_locals[i]->size);
             num_vecs += host_locals[i]->size;
         }
+
+        printf(" -- serialized nx, ny, size, num_vecs\n");
 
         // turn all serial vectors into one contiguous serial vector
         serial.reserve(num_vecs);
@@ -732,6 +738,8 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
                 ++index;
             }
         }
+
+        printf(" -- serialized vectors\n");
     }
 
     // grab all data pointers
