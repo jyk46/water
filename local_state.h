@@ -25,7 +25,7 @@ typedef typename Physics::vec  vec;
 public:
     LocalState(int nx, int ny)
         : nx(nx), ny(ny),
-          size(nx*ny)
+          size(nx*ny),
           serial(
               (size) +// u_ // 0
               (size) +// v_ // 1
