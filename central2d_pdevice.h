@@ -217,7 +217,7 @@ private:
     }
 
     // Initialize per-thread local state inside of offloaded kernel
-    TARGET_MIC
+    // TARGET_MIC
     void init_locals(Parameters &params, std::vector<LocalState<Physics>*> &locals);
 
     // Apply limiter to all components in a vector
