@@ -789,7 +789,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
                 locals[i]->init(dev_x_data[i],
                                 dev_y_data[i],
                                 dev_s_data[i],
-                                reinterpret_cast<real*>(all_serial[offset]));
+                                reinterpret_cast<real*>(all_serial+offset));
                 offset += dev_s_data[i]*Physics::vec_size;
             }
         }
