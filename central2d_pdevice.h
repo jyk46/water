@@ -755,6 +755,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     //         in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy)) \ // all size
     //         in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))
     // #pragma offload target(mic:0) in(host_params.nghost) in(host_params.nx) in(host_params.ny) in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch) in(host_params.nthreads in(host_params.nx_all) in(host_params.ny_all) in(host_params.dx) in(host_params.dy) in(host_params.cfl) in(tfinal) inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy)) in(num_locals) in(all_locals : length(size_locals) alloc_if(init) free_if(destroy)) in(dev_x_data : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_y_data : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_s_data : length(num_locals) alloc_if(init) free_if(destroy)) in(all_serial : length(num_serial) alloc_if(init) free_if(destroy))
+    auto teardown = destroy;
     #pragma offload target(mic:0)                                                      \
             in(nghost)   in(nx)       in(ny)                                           \
             in(nxblocks) in(nyblocks) in(nbatch)                                       \
@@ -767,7 +768,8 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
             in(dev_x_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
             in(dev_y_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
             in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
-            in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))
+            in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))  \
+            in(teardown)
     {
 
 
@@ -841,21 +843,21 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
                 int tid = omp_get_thread_num();
 
                 // Copy global data to local buffers
-                copy_to_local(params, *locals[tid], tid, u_offload);
+                copy_to_local(params, locals[tid], tid, u_offload);
 
                 // Batch multiple timesteps
                 for (int bi = 0; bi < modified_nbatch; ++bi) {
 
                     // Execute the even and odd sub-steps for each super-step
                     for (int io = 0; io < 2; ++io) {
-                        compute_flux(params, *locals[tid]);
-                        limited_derivs(params, *locals[tid]);
-                        compute_step(params, *locals[tid], io, dt);
+                        compute_flux(params, locals[tid]);
+                        limited_derivs(params, locals[tid]);
+                        compute_step(params, locals[tid], io, dt);
                     }
                 }
 
                 // Copy local data to global buffer
-                copy_from_local(params, *locals[tid], tid, u_offload);
+                copy_from_local(params, locals[tid], tid, u_offload);
             }
 
             // Update simulated time
@@ -864,7 +866,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
 
         // Clean up local state
     } // end pragma offload
-    // for (auto local : locals) delete local;
+    for (auto local : host_locals) delete local;
 }
 
 /**
