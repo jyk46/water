@@ -76,6 +76,12 @@ public:
     inline int get_nx() { return nx; }
     inline int get_ny() { return ny; }
 
+
+    #ifdef _PARALLEL_DEVICE
+        typedef std::vector<vec> aligned_vector; // :'(
+    #else
+        typedef DEF_ALIGN(Physics::BYTE_ALIGN) std::vector<vec, aligned_allocator<vec, Physics::BYTE_ALIGN>> aligned_vector;
+    #endif
     // danger: don't touch these if you don't know what you are doing...
     int nx, ny, size;
     aligned_vector serial;
@@ -84,12 +90,6 @@ private:
     // Helper to calculate 1D offset from 2D coordinates
     inline int offset(int ix, int iy) const { return iy*nx+ix; }
 
-
-    #ifdef _PARALLEL_DEVICE
-        typedef std::vector<vec> aligned_vector; // :'(
-    #else
-        typedef DEF_ALIGN(Physics::BYTE_ALIGN) std::vector<vec, aligned_allocator<vec, Physics::BYTE_ALIGN>> aligned_vector;
-    #endif
 
 
     vec *u_;  // Solution values
