@@ -705,10 +705,11 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
 
     int num_locals = host_locals.size();
     int size_locals = num_locals*sizeof(LocalState<Physics>*);
-    void *all_locals;// !danger
+    // void *all_locals;// !danger
+    void *all_locals = reinterpret_cast<void*>(host_locals.data());
     size_t num_vecs = 0;
     if(first_iter) {
-        all_locals = reinterpret_cast<void*>(host_locals.data());
+        // all_locals = reinterpret_cast<void*>(host_locals.data());
 
 
         // serialize nx / ny / size for reconstruction on the phi
