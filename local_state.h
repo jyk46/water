@@ -23,6 +23,7 @@ typedef typename Physics::real real;
 typedef typename Physics::vec  vec;
 
 public:
+    // the node side
     LocalState(int nx, int ny)
         : nx(nx), ny(ny),
           size(nx*ny),
@@ -36,6 +37,20 @@ public:
               (size) +// fx_// 6
               (size)  // gy_// 7
           ){
+        vec *start = serial.data();
+        u_         = start + (0*size);
+        v_         = start + (1*size);
+        f_         = start + (2*size);
+        g_         = start + (3*size);
+        ux_        = start + (4*size);
+        uy_        = start + (5*size);
+        fx_        = start + (6*size);
+        gy_        = start + (7*size);
+    }
+
+    // the device side
+    LocalState(int nx, int ny, int size, vec *data) {
+        serial.assign(data, data+size);
         vec *start = serial.data();
         u_         = start + (0*size);
         v_         = start + (1*size);
@@ -75,14 +90,14 @@ private:
 
     aligned_vector serial;
 
-    /*aligned_vector*/ vec *u_;  // Solution values
-    /*aligned_vector*/ vec *v_;  // Solution values at next step
-    /*aligned_vector*/ vec *f_;  // Fluxes in x
-    /*aligned_vector*/ vec *g_;  // Fluxes in y
-    /*aligned_vector*/ vec *ux_; // x differences of u
-    /*aligned_vector*/ vec *uy_; // y differences of u
-    /*aligned_vector*/ vec *fx_; // x differences of f
-    /*aligned_vector*/ vec *gy_; // y differences of g
+    vec *u_;  // Solution values
+    vec *v_;  // Solution values at next step
+    vec *f_;  // Fluxes in x
+    vec *g_;  // Fluxes in y
+    vec *ux_; // x differences of u
+    vec *uy_; // y differences of u
+    vec *fx_; // x differences of f
+    vec *gy_; // y differences of g
 };
 
 #ifdef _PARALLEL_DEVICE
