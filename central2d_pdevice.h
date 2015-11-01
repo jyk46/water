@@ -690,6 +690,8 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     host_params.dy       = dy;
     host_params.cfl      = cfl;
 
+    printf(" -- made host params\n"); fflush(stdout);
+
     // Initialize per-thread local buffers on the device
     std::vector<LocalState<Physics>*> host_locals;
     if(first_iter) init_locals(host_params, host_locals);// only need these once
@@ -703,7 +705,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     std::vector<int> dev_s;
     std::vector<vec> serial;
 
-    printf(" -- everybody localized\n");
+    printf(" -- everybody localized\n");fflush(stdout);
 
     int num_locals = host_locals.size();
     int size_locals = num_locals*sizeof(LocalState<Physics>*);
@@ -712,7 +714,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     size_t num_vecs = 0;
     if(first_iter) {
 
-        printf(" -- first iter\n");
+        printf(" -- first iter\n");fflush(stdout);
         // all_locals = reinterpret_cast<void*>(host_locals.data());
 
 
@@ -724,7 +726,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
             num_vecs += host_locals[i]->size;
         }
 
-        printf(" -- serialized nx, ny, size, num_vecs\n");
+        printf(" -- serialized nx, ny, size, num_vecs\n");fflush(stdout);
 
         // turn all serial vectors into one contiguous serial vector
         serial.reserve(num_vecs);
@@ -739,7 +741,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
             }
         }
 
-        printf(" -- serialized vectors\n");
+        printf(" -- serialized vectors\n");fflush(stdout);
     }
 
     // grab all data pointers
@@ -760,7 +762,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
                "-> num_serial:      %d\n"
                "-> total_size:      %d\n",
                u_offload, num_locals, dev_x_data, dev_y_data, dev_s_data, all_locals, all_serial, num_serial, (nx_all*ny_all)
-          );
+          );fflush(stdout);
 
 
     // #pragma offload target(mic:0) \
