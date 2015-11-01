@@ -776,7 +776,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
         //? reconstruct locals only on first iteration
         // std::vector<LocalState<Physics>*> locals;
 
-        LocalState<Physics> **locals = reinterpret_cast<LocalState<Physics>**>(all_locals);
+        LocalState<Physics> *locals = reinterpret_cast<LocalState<Physics>*>(all_locals);
 
         if(num_locals) {// jajajajajajajajajajajajajajajajaja
             // locals = new std::vector<LocalState<Physics>*>();
@@ -843,21 +843,21 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
                 int tid = omp_get_thread_num();
 
                 // Copy global data to local buffers
-                copy_to_local(params, locals[tid], tid, u_offload);
+                copy_to_local(params, &locals[tid], tid, u_offload);
 
                 // Batch multiple timesteps
                 for (int bi = 0; bi < modified_nbatch; ++bi) {
 
                     // Execute the even and odd sub-steps for each super-step
                     for (int io = 0; io < 2; ++io) {
-                        compute_flux(params, locals[tid]);
-                        limited_derivs(params, locals[tid]);
-                        compute_step(params, locals[tid], io, dt);
+                        compute_flux(params,   &locals[tid]);
+                        limited_derivs(params, &locals[tid]);
+                        compute_step(params,   &locals[tid], io, dt);
                     }
                 }
 
                 // Copy local data to global buffer
-                copy_from_local(params, locals[tid], tid, u_offload);
+                copy_from_local(params, &locals[tid], tid, u_offload);
             }
 
             // Update simulated time
