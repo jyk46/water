@@ -741,6 +741,19 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     real *all_serial = reinterpret_cast<real*>(serial.data());
     int   num_serial = serial.size()*Physics::vec_size;
 
+    printf(
+               "-> u_offload addr:  %x\n"
+               "-> num_locals:      %d\n"
+               "-> x_data_addr:     %x\n"
+               "-> y_data_addr:     %x\n"
+               "-> s_data_addr:     %x\n"
+               "-> all_locals addr: %x\n"
+               "-> all_serial addr: %x\n"
+               "-> num_serial:      %d\n"
+               "-> total_size:      %d\n",
+               u_offload, num_locals, dev_x_data, dev_y_data, dev_s_data, all_locals, all_serial, num_serial, (nx_all*ny_all)
+          );
+
 
     // #pragma offload target(mic:0) \
     //         in(host_params.nghost)   in(host_params.nx)       in(host_params.ny)      \ // sim params
