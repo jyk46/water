@@ -705,10 +705,10 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
 
     int num_locals = host_locals.size();
     int size_locals = num_locals*sizeof(LocalState<Physics>*);
-    LocalState<Physics> *all_locals;// !danger
+    void *all_locals;// !danger
     size_t num_vecs = 0;
     if(first_iter) {
-        all_locals = host_locals.data();
+        all_locals = reinterpret_cast<void*>(host_locals.data());
 
 
         // serialize nx / ny / size for reconstruction on the phi
@@ -754,14 +754,28 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     //         in(dev_y_data   : length(num_locals)     alloc_if(init) free_if(destroy)) \ // all ny
     //         in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy)) \ // all size
     //         in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))
-    #pragma offload target(mic:0) in(host_params.nghost) in(host_params.nx) in(host_params.ny) in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch) in(host_params.nthreads in(host_params.nx_all) in(host_params.ny_all) in(host_params.dx) in(host_params.dy) in(host_params.cfl) in(tfinal) inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy)) in(num_locals) in(all_locals : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_x_data : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_y_data : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_s_data : length(num_locals) alloc_if(init) free_if(destroy)) in(all_serial : length(num_serial) alloc_if(init) free_if(destroy))
+    // #pragma offload target(mic:0) in(host_params.nghost) in(host_params.nx) in(host_params.ny) in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch) in(host_params.nthreads in(host_params.nx_all) in(host_params.ny_all) in(host_params.dx) in(host_params.dy) in(host_params.cfl) in(tfinal) inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy)) in(num_locals) in(all_locals : length(size_locals) alloc_if(init) free_if(destroy)) in(dev_x_data : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_y_data : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_s_data : length(num_locals) alloc_if(init) free_if(destroy)) in(all_serial : length(num_serial) alloc_if(init) free_if(destroy))
+    #pragma offload target(mic:0) \
+            in(host_params.nghost)   in(host_params.nx)       in(host_params.ny)       \
+            in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch)   \
+            in(host_params.nthreads) in(host_params.nx_all)   in(host_params.ny_all)   \
+            in(host_params.dx)       in(host_params.dy)       in(host_params.cfl)      \
+            in(tfinal)                                                                 \
+            inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy))  \
+            in(num_locals)                                                             \
+            in(all_locals   : length(size_locals)     alloc_if(init) free_if(destroy)) \
+            in(dev_x_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
+            in(dev_y_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
+            in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
+            in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))
     {
 
         //? reconstruct locals only on first iteration
-        std::vector<LocalState<Physics>> *locals;
+        std::vector<LocalState<Physics>*> *locals;
         if(num_locals) {// jajajajajajajajajajajajajajajajaja
             locals = new std::vector<LocalState<Physics>>();
-            locals->assign(all_locals, all_locals+num_locals);
+            LocalState<Physics> *ze_locals = reinterpret_cast<LocalState<Physics>*>(all_locals);
+            locals->assign(ze_locals, ze_locals+num_locals);
             size_t offset = 0;
             for(auto i = 0; i < num_locals; ++i) {
                 locals[i]->init(dev_x_data[i],
