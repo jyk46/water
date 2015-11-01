@@ -742,17 +742,17 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
 
 
     #pragma offload target(mic:0)
-            in(host_params.nghost)   in(host_params.nx)       in(host_params.ny)     \ // sim params
-            in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch) \ // ''''''''''
-            in(host_params.nthreads) in(host_params.nx_all)   in(host_params.ny_all) \ // ''''''''''
-            in(host_params.dx)       in(host_params.dy)       in(host_params.cfl)    \ // ''''''''''
-            in(tfinal)                                                               \ // ''''''''''
-            inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy))\ // global u, needs to go every time to write_frame
-            in(num_locals)                                                           \ // how many LocalState<Physics> there are
-            in(all_locals   : length(num_locals)     alloc_if(init) free_if(destroy))\ // serialized LocalState<Physics>
-            in(dev_x_data   : length(num_locals)     alloc_if(init) free_if(destroy))\ // all nx
-            in(dev_y_data   : length(num_locals)     alloc_if(init) free_if(destroy))\ // all ny
-            in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy))\ // all size
+            in(host_params.nghost)   in(host_params.nx)       in(host_params.ny)      \ // sim params
+            in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch)  \ // ''''''''''
+            in(host_params.nthreads) in(host_params.nx_all)   in(host_params.ny_all)  \ // ''''''''''
+            in(host_params.dx)       in(host_params.dy)       in(host_params.cfl)     \ // ''''''''''
+            in(tfinal)                                                                \ // ''''''''''
+            inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy)) \ // global u, needs to go every time to write_frame
+            in(num_locals)                                                            \ // how many LocalState<Physics> there are
+            in(all_locals   : length(num_locals)     alloc_if(init) free_if(destroy)) \ // serialized LocalState<Physics>
+            in(dev_x_data   : length(num_locals)     alloc_if(init) free_if(destroy)) \ // all nx
+            in(dev_y_data   : length(num_locals)     alloc_if(init) free_if(destroy)) \ // all ny
+            in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy)) \ // all size
             in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))
     {
 
