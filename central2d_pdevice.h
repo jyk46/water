@@ -713,10 +713,10 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
 
         // serialize nx / ny / size for reconstruction on the phi
         for(auto i = 0; i < num_locals; ++i) {
-            dev_x.emplace_back(host_locals[i].nx);
-            dev_y.emplace_back(host_locals[i].ny);
-            dev_s.emplace_back(host_locals[i].size);
-            num_vecs += host_locals[i].size;
+            dev_x.emplace_back(host_locals[i]->nx);
+            dev_y.emplace_back(host_locals[i]->ny);
+            dev_s.emplace_back(host_locals[i]->size);
+            num_vecs += host_locals[i]->size;
         }
 
         // turn all serial vectors into one contiguous serial vector
@@ -756,10 +756,10 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
     //         in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))
     // #pragma offload target(mic:0) in(host_params.nghost) in(host_params.nx) in(host_params.ny) in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch) in(host_params.nthreads in(host_params.nx_all) in(host_params.ny_all) in(host_params.dx) in(host_params.dy) in(host_params.cfl) in(tfinal) inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy)) in(num_locals) in(all_locals : length(size_locals) alloc_if(init) free_if(destroy)) in(dev_x_data : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_y_data : length(num_locals) alloc_if(init) free_if(destroy)) in(dev_s_data : length(num_locals) alloc_if(init) free_if(destroy)) in(all_serial : length(num_serial) alloc_if(init) free_if(destroy))
     #pragma offload target(mic:0) \
-            in(host_params.nghost)   in(host_params.nx)       in(host_params.ny)       \
-            in(host_params.nxblocks) in(host_params.nyblocks) in(host_params.nbatch)   \
-            in(host_params.nthreads) in(host_params.nx_all)   in(host_params.ny_all)   \
-            in(host_params.dx)       in(host_params.dy)       in(host_params.cfl)      \
+            in(nghost)   in(nx)       in(ny)       \
+            in(nxblocks) in(nyblocks) in(nbatch)   \
+            in(nthreads) in(nx_all)   in(ny_all)   \
+            in(dx)       in(dy)       in(cfl)      \
             in(tfinal)                                                                 \
             inout(u_offload : length(u_offload_size) alloc_if(init) free_if(destroy))  \
             in(num_locals)                                                             \
@@ -769,6 +769,7 @@ void Central2D<Physics, Limiter>::run(real tfinal, int iter, int num_iters)
             in(dev_s_data   : length(num_locals)     alloc_if(init) free_if(destroy))  \
             in(all_serial   : length(num_serial)     alloc_if(init) free_if(destroy))
     {
+
 
         //? reconstruct locals only on first iteration
         std::vector<LocalState<Physics>*> *locals;
