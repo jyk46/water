@@ -48,14 +48,14 @@ public:
     }
 
     // Array accessor functions
-    inline vec& u(int ix, int iy)  { return &u_[offset(ix,iy)];  }
-    inline vec& v(int ix, int iy)  { return &v_[offset(ix,iy)];  }
-    inline vec& f(int ix, int iy)  { return &f_[offset(ix,iy)];  }
-    inline vec& g(int ix, int iy)  { return &g_[offset(ix,iy)];  }
-    inline vec& ux(int ix, int iy) { return &ux_[offset(ix,iy)]; }
-    inline vec& uy(int ix, int iy) { return &uy_[offset(ix,iy)]; }
-    inline vec& fx(int ix, int iy) { return &fx_[offset(ix,iy)]; }
-    inline vec& gy(int ix, int iy) { return &gy_[offset(ix,iy)]; }
+    inline vec& u(int ix, int iy)  { return *u_[offset(ix,iy)];  }
+    inline vec& v(int ix, int iy)  { return *v_[offset(ix,iy)];  }
+    inline vec& f(int ix, int iy)  { return *f_[offset(ix,iy)];  }
+    inline vec& g(int ix, int iy)  { return *g_[offset(ix,iy)];  }
+    inline vec& ux(int ix, int iy) { return *ux_[offset(ix,iy)]; }
+    inline vec& uy(int ix, int iy) { return *uy_[offset(ix,iy)]; }
+    inline vec& fx(int ix, int iy) { return *fx_[offset(ix,iy)]; }
+    inline vec& gy(int ix, int iy) { return *gy_[offset(ix,iy)]; }
 
     // Miscellaneous accessors
     inline int get_nx() { return nx; }
